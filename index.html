@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Transcription with AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+        .mic-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mic-icon {
+            font-size: 36px;
+            transition: all 0.3s ease;
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(229, 62, 62, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-8">
+            <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">
+                <i class="fas fa-heartbeat text-red-500 mr-2"></i>Medical Transcription with AI
+            </h1>
+            <div class="mb-6">
+                <label for="apiKey" class="block text-sm font-medium text-gray-700">API Key (OpenAI, Anthropic, or Groq)</label>
+                <input type="password" id="apiKey" name="apiKey" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your API key">
+                <p class="mt-2 text-sm text-gray-500">Warning: Entering API keys in client-side applications is not secure. Use this for testing purposes only.</p>
+            </div>
+            <div class="flex justify-center mb-8">
+                <div id="micButton" class="mic-container bg-red-500 hover:bg-red-600">
+                    <i id="micIcon" class="fas fa-microphone text-white mic-icon"></i>
+                </div>
+            </div>
+            <p id="status" class="text-center text-lg font-medium text-gray-600 mb-4"></p>
+            <p id="instructions" class="text-center text-sm text-gray-500 mb-8"></p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-comment-medical text-green-500 mr-2"></i>Transcription
+                    </h2>
+                    <div id="transcription" class="bg-gray-100 p-4 rounded-lg h-64 overflow-auto text-gray-700"></div>
+                </div>
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-notes-medical text-blue-500 mr-2"></i>Processed Data
+                    </h2>
+                    <div id="processedData" class="bg-gray-100 p-4 rounded-lg h-64 overflow-auto text-gray-700"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const micButton = document.getElementById('micButton');
+        const micIcon = document.getElementById('micIcon');
+        const status = document.getElementById('status');
+        const instructions = document.getElementById('instructions');
+        const transcription = document.getElementById('transcription');
+        const processedData = document.getElementById('processedData');
+        const apiKeyInput = document.getElementById('apiKey');
+
+        let recognition;
+        let isRecording = false;
+
+        function updateMicState(recording) {
+            if (recording) {
+                micButton.classList.add('pulse');
+                micIcon.classList.remove('fa-microphone');
+                micIcon.classList.add('fa-stop');
+            } else {
+                micButton.classList.remove('pulse');
+                micIcon.classList.remove('fa-stop');
+                micIcon.classList.add('fa-microphone');
+            }
+        }
+
+        function setStatus(message) {
+            status.textContent = message;
+        }
+
+        function setInstructions(message) {
+            instructions.innerHTML = message;
+        }
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                updateMicState(true);
+                setStatus('Listening... Speak now.');
+                setInstructions('');
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                updateMicState(false);
+                setStatus('Stopped listening.');
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                transcription.innerHTML = finalTranscript + '<span class="text-gray-400">' + interimTranscript + '</span>';
+                if (finalTranscript) {
+                    processTranscription(finalTranscript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error', event.error);
+                isRecording = false;
+                updateMicState(false);
+                setStatus('Error occurred in recognition: ' + event.error);
+            };
+
+            micButton.onclick = () => {
+                if (!isRecording) {
+                    recognition.start();
+                } else {
+                    recognition.stop();
+                }
+            };
+
+        } else {
+            setStatus('Web Speech API is not supported in this browser.');
+            setInstructions('Please try using Google Chrome or Microsoft Edge for speech recognition functionality.');
+            micButton.disabled = true;
+            micButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        async function processTranscription(text) {
+            const apiKey = apiKeyInput.value;
+            if (!apiKey) {
+                setStatus('Please enter an API key.');
+                return;
+            }
+
+            const apiUrl = 'https://api.openai.com/v1/chat/completions'; // Default to OpenAI
+
+            const prompt = `
+                Given the following medical transcription, extract and categorize the information into these sections:
+                Findings, Symptoms, Potential Diagnosis, Plan, and Treatment.
+                If a section is not mentioned, indicate "Not mentioned" for that section.
+
+                Transcription: ${text}
+
+                Please format the response as JSON with the following structure:
+                {
+                    "Findings": "...",
+                    "Symptoms": "...",
+                    "Potential Diagnosis": "...",
+                    "Plan": "...",
+                    "Treatment": "..."
+                }
+            `;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.7,
+                        max_tokens: 500
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const processedData = JSON.parse(data.choices[0].message.content);
+
+                let processedHTML = '';
+                for (const [key, value] of Object.entries(processedData)) {
+                    processedHTML += `
+                    <div class="mb-4 p-3 bg-white rounded-lg shadow">
+                        <span class="font-semibold flex items-center">
+                            <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>${key}:
+                        </span>
+                        <span class="ml-6 block mt-1">${value}</span>
+                    </div>`;
+                }
+                document.getElementById('processedData').innerHTML = processedHTML;
+            } catch (error) {
+                console.error('Error processing transcription:', error);
+                document.getElementById('processedData').innerHTML = '<p class="text-red-500">Error processing transcription. Please check your API key and try again.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
