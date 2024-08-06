@@ -173,6 +173,7 @@
 
         let recognition;
         let isRecording = false;
+        let fullTranscription = '';
 
         function updateMicState(recording) {
             if (recording) {
@@ -233,7 +234,8 @@
             recognition.onend = () => {
                 isRecording = false;
                 updateMicState(false);
-                setStatus('Stopped listening.');
+                setStatus('Stopped listening. Processing transcription...');
+                processTranscription(fullTranscription);
             };
 
             recognition.onresult = (event) => {
@@ -248,10 +250,8 @@
                     }
                 }
 
-                transcription.innerHTML = finalTranscript + '<span class="text-gray-400">' + interimTranscript + '</span>';
-                if (finalTranscript) {
-                    processTranscription(finalTranscript);
-                }
+                fullTranscription += finalTranscript;
+                transcription.innerHTML = fullTranscription + '<span class="text-gray-400">' + interimTranscript + '</span>';
             };
 
             recognition.onerror = (event) => {
@@ -277,94 +277,96 @@
         }
 
         async function processTranscription(text) {
-            const apiKey = apiKeyInput.value;
-            const selectedModel = modelSelect.value;
-            
-            if (!apiKey) {
-                setStatus('Please enter an API key.');
-                return;
-            }
+    const apiKey = apiKeyInput.value;
+    const selectedModel = modelSelect.value;
+    
+    if (!apiKey) {
+        setStatus('Please enter an API key.');
+        return;
+    }
 
-            let apiUrl, headers, body;
-            let processedContent = '';
+    let apiUrl, headers, body;
+    let processedContent = '';
 
-            switch (selectedModel) {
-                case 'openai':
-                    apiUrl = 'https://api.openai.com/v1/chat/completions';
-                    headers = {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    };
-                    body = JSON.stringify({
-                        model: "gpt-4",
-                        messages: [{ role: "user", content: getPrompt(text) }],
-                        temperature: 0.7,
-                        max_tokens: 1000
-                    });
-                    break;
-                case 'anthropic':
-                    apiUrl = 'https://api.anthropic.com/v1/messages';
-                    headers = {
-                        'Content-Type': 'application/json',
-                        'x-api-key': apiKey,
-                        'anthropic-version': '2023-06-01'
-                    };
-                    body = JSON.stringify({
-                        model: "claude-3-opus-20240229",
-                        max_tokens: 1000,
-                        messages: [{ role: "user", content: getPrompt(text) }]
-                    });
-                    break;
-                case 'groq':
-                    apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-                    headers = {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    };
-                    body = JSON.stringify({
-                        model: "mixtral-8x7b-32768",
-                        messages: [{ role: "user", content: getPrompt(text) }],temperature: 0.7,
-                        max_tokens: 1000
-                    });
-                    break;
-                default:
-                    setStatus('Invalid model selected.');
-                    return;
-            }
+    switch (selectedModel) {
+        case 'openai':
+            apiUrl = 'https://api.openai.com/v1/chat/completions';
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            };
+            body = JSON.stringify({
+                model: "gpt-4",
+                messages: [{ role: "user", content: getPrompt(text) }],
+                temperature: 0.7,
+                max_tokens: 2000  // Increased max_tokens
+            });
+            break;
+        case 'anthropic':
+            apiUrl = 'https://api.anthropic.com/v1/messages';
+            headers = {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            };
+            body = JSON.stringify({
+                model: "claude-3-opus-20240229",
+                max_tokens: 2000,  // Increased max_tokens
+                messages: [{ role: "user", content: getPrompt(text) }]
+            });
+            break;
+        case 'groq':
+            apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            };
+            body = JSON.stringify({
+                model: "mixtral-8x7b-32768",
+                messages: [{ role: "user", content: getPrompt(text) }],
+                temperature: 0.7,
+                max_tokens: 2000  // Increased max_tokens
+            });
+            break;
+        default:
+            setStatus('Invalid model selected.');
+            return;
+    }
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: headers,
-                    body: body
-                });
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: headers,
+            body: body
+        });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (selectedModel === 'anthropic') {
-                    processedContent = data.content[0].text;
-                } else {
-                    processedContent = data.choices[0].message.content;
-                }
-
-                // Log the raw response for debugging
-                console.log('Raw AI response:', processedContent);
-
-                // Display the processed data
-                displayProcessedData(processedContent);
-                rawJsonPayload.textContent = processedContent;
-                setStatus('Transcription processed successfully.');
-            } catch (error) {
-                console.error('Error processing transcription:', error);
-                processedData.innerHTML = `<p class="text-red-500">Error processing transcription: ${error.message}</p>
-                    <p class="text-sm mt-2">Please check your API key and try again. If the problem persists, there might be an issue with the AI model's response format.</p>`;
-                rawJsonPayload.textContent = 'Error: Unable to process transcription. No response content available.';
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
+        
+        if (selectedModel === 'anthropic') {
+            processedContent = data.content[0].text;
+        } else {
+            processedContent = data.choices[0].message.content;
+        }
+
+        // Log the raw response for debugging
+        console.log('Raw AI response:', processedContent);
+
+        // Display the processed data
+        displayProcessedData(processedContent);
+        rawJsonPayload.textContent = processedContent;
+        setStatus('Transcription processed successfully.');
+    } catch (error) {
+        console.error('Error processing transcription:', error);
+        processedData.innerHTML = `<p class="text-red-500">Error processing transcription: ${error.message}</p>
+            <p class="text-sm mt-2">Please check your API key and try again. If the problem persists, there might be an issue with the AI model's response format.</p>`;
+        rawJsonPayload.textContent = 'Error: Unable to process transcription. No response content available.';
+    }
+}
+
 
         function getPrompt(text) {
             return `
@@ -386,115 +388,129 @@
         }
 
         function displayProcessedData(data) {
-            const patientDetails = document.getElementById('patientDetails');
-            const conditionsList = document.getElementById('conditionsList');
-            const medicationsList = document.getElementById('medicationsList');
-            const proceduresList = document.getElementById('proceduresList');
-            const recommendationsList = document.getElementById('recommendationsList');
-            const explanationText = document.getElementById('explanationText');
+    const patientDetails = document.getElementById('patientDetails');
+    const conditionsList = document.getElementById('conditionsList');
+    const medicationsList = document.getElementById('medicationsList');
+    const proceduresList = document.getElementById('proceduresList');
+    const recommendationsList = document.getElementById('recommendationsList');
+    const explanationText = document.getElementById('explanationText');
 
-            // Clear previous content
-            patientDetails.innerHTML = '';
-            conditionsList.innerHTML = '';
-            medicationsList.innerHTML = '';
-            proceduresList.innerHTML = '';
-            recommendationsList.innerHTML = '';
-            explanationText.innerHTML = '';
+    // Clear previous content
+    patientDetails.innerHTML = '';
+    conditionsList.innerHTML = '';
+    medicationsList.innerHTML = '';
+    proceduresList.innerHTML = '';
+    recommendationsList.innerHTML = '';
+    explanationText.innerHTML = '';
 
-            // Split the data into JSON and explanation parts
-            const parts = data.split('\n\n');
-            let jsonData, explanation;
+    // Attempt to extract JSON from the response
+    let jsonData = '';
+    let explanation = '';
+    
+    try {
+        // Find the first occurrence of a valid JSON object
+        const jsonStart = data.indexOf('{');
+        const jsonEnd = data.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            jsonData = data.substring(jsonStart, jsonEnd + 1);
+            explanation = data.substring(jsonEnd + 1).trim();
+        } else {
+            throw new Error('No valid JSON found in the response');
+        }
 
-            if (parts.length > 1) {
-                jsonData = parts[0];
-                explanation = parts.slice(1).join('\n\n');
-            } else {
-                jsonData = data;
-                explanation = '';
-            }
+        // Parse the JSON data
+        const fhirData = JSON.parse(jsonData);
 
-            try {
-                // Parse the JSON data
-                const fhirData = JSON.parse(jsonData);
+        // Helper function to safely access nested properties
+        const safelyAccessProperty = (obj, path) => {
+            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+        };
 
-                // Display Patient Information
-                if (fhirData.entry) {
-                    const patient = fhirData.entry.find(e => e.resource.resourceType === 'Patient')?.resource;
-                    if (patient) {
-                        patientDetails.innerHTML = `
-                            <p><strong>Name:</strong> ${patient.name[0].given.join(' ')} ${patient.name[0].family}</p>
-                            <p><strong>ID:</strong> ${patient.id}</p>
-                        `;
-                    }
-                }
+        // Helper function to create list items
+        const createListItem = (resource, displayPath, detailsCallback) => {
+            const display = safelyAccessProperty(resource, displayPath) || 'Unknown';
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <strong>${display}</strong>
+                ${detailsCallback ? `
+                    <button class="ml-2 text-blue-500 hover:text-blue-700" onclick="toggleDetails(this)">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="expandable-content mt-2 ml-4 text-sm text-gray-600">
+                        ${detailsCallback(resource)}
+                    </div>
+                ` : ''}
+            `;
+            return li;
+        };
 
-                // Display Conditions
-                const conditions = fhirData.entry.filter(e => e.resource.resourceType === 'Condition');
-                conditions.forEach(entry => {
-                    const condition = entry.resource;
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <strong>${condition.code.coding[0].display}</strong>
-                        <button class="ml-2 text-blue-500 hover:text-blue-700" onclick="toggleDetails(this)">
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="expandable-content mt-2 ml-4 text-sm text-gray-600">
-                            <p><strong>Code:</strong> ${condition.code.coding[0].code}</p>
-                            <p><strong>System:</strong> ${condition.code.coding[0].system}</p>
-                        </div>
-                    `;
-                    conditionsList.appendChild(li);
-                });
-
-                // Display Medications
-                const medications = fhirData.entry.filter(e => e.resource.resourceType === 'MedicationStatement');
-                medications.forEach(entry => {
-                    const med = entry.resource;
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <strong>${med.medicationCodeableConcept.text}</strong>
-                    `;
-                    medicationsList.appendChild(li);
-                });
-
-                // Display Procedures
-                const procedures = fhirData.entry.filter(e => e.resource.resourceType === 'Procedure');
-                procedures.forEach(entry => {
-                    const procedure = entry.resource;
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <strong>${procedure.code.coding[0].display}</strong>
-                        <button class="ml-2 text-blue-500 hover:text-blue-700" onclick="toggleDetails(this)">
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="expandable-content mt-2 ml-4 text-sm text-gray-600">
-                            <p><strong>Code:</strong> ${procedure.code.coding[0].code}</p>
-                            <p><strong>System:</strong> ${procedure.code.coding[0].system}</p>
-                        </div>
-                    `;
-                    proceduresList.appendChild(li);
-                });
-
-                // Display Recommendations
-                const carePlan = fhirData.entry.find(e => e.resource.resourceType === 'CarePlan')?.resource;
-                if (carePlan) {
-                    carePlan.activity.forEach(activity => {
-                        const li = document.createElement('li');
-                        li.textContent = activity.detail.code.coding[0].display;
-                        recommendationsList.appendChild(li);
-                    });
-                }
-
-                // Display explanation
-                if (explanation) {
-                    explanationText.innerHTML = `<h3 class="font-semibold mb-2">AI Explanation:</h3><p>${explanation.replace(/\n/g, '<br>')}</p>`;
-                }
-
-            } catch (error) {
-                console.error('Error parsing FHIR data:', error);
-                processedData.innerHTML = `<p class="text-red-500">Error parsing FHIR data: ${error.message}</p>`;
+        // Display Patient Information
+        if (fhirData.entry && Array.isArray(fhirData.entry)) {
+            const patient = fhirData.entry.find(e => e.resource && e.resource.resourceType === 'Patient')?.resource;
+            if (patient && patient.name && patient.name[0]) {
+                const givenName = patient.name[0].given ? patient.name[0].given.join(' ') : 'Unknown';
+                const familyName = patient.name[0].family || 'Unknown';
+                patientDetails.innerHTML = `
+                    <p><strong>Name:</strong> ${givenName} ${familyName}</p>
+                    <p><strong>ID:</strong> ${patient.id || 'Unknown'}</p>
+                `;
             }
         }
+
+        // Display Conditions
+        const conditions = fhirData.entry?.filter(e => e.resource && e.resource.resourceType === 'Condition') || [];
+        conditions.forEach(entry => {
+            const condition = entry.resource;
+            const li = createListItem(condition, 'code.coding.0.display', (res) => `
+                <p><strong>Code:</strong> ${safelyAccessProperty(res, 'code.coding.0.code') || 'Unknown'}</p>
+                <p><strong>System:</strong> ${safelyAccessProperty(res, 'code.coding.0.system') || 'Unknown'}</p>
+            `);
+            conditionsList.appendChild(li);
+        });
+
+        // Display Medications
+        const medications = fhirData.entry?.filter(e => e.resource && e.resource.resourceType === 'MedicationStatement') || [];
+        medications.forEach(entry => {
+            const med = entry.resource;
+            const li = createListItem(med, 'medicationCodeableConcept.text');
+            medicationsList.appendChild(li);
+        });
+
+        // Display Procedures
+        const procedures = fhirData.entry?.filter(e => e.resource && e.resource.resourceType === 'Procedure') || [];
+        procedures.forEach(entry => {
+            const procedure = entry.resource;
+            const li = createListItem(procedure, 'code.coding.0.display', (res) => `
+                <p><strong>Code:</strong> ${safelyAccessProperty(res, 'code.coding.0.code') || 'Unknown'}</p>
+                <p><strong>System:</strong> ${safelyAccessProperty(res, 'code.coding.0.system') || 'Unknown'}</p>
+            `);
+            proceduresList.appendChild(li);
+        });
+
+        // Display Recommendations
+        const carePlan = fhirData.entry?.find(e => e.resource && e.resource.resourceType === 'CarePlan')?.resource;
+        if (carePlan && carePlan.activity) {
+            carePlan.activity.forEach(activity => {
+                const li = createListItem(activity, 'detail.code.coding.0.display');
+                recommendationsList.appendChild(li);
+            });
+        }
+
+        // Display explanation
+        if (explanation) {
+            explanationText.innerHTML = `<h3 class="font-semibold mb-2">AI Explanation:</h3><p>${explanation.replace(/\n/g, '<br>')}</p>`;
+        }
+
+    } catch (error) {
+        console.error('Error parsing FHIR data:', error);
+        processedData.innerHTML = `<p class="text-red-500">Error parsing FHIR data: ${error.message}</p>
+            <p class="text-sm mt-2">The AI response may not be in the expected FHIR format or might be truncated. Please check the raw response for details.</p>`;
+    }
+
+    // Always display the raw response, even if parsing fails
+    rawJsonPayload.textContent = data;
+}
 
         function toggleDetails(button) {
             const content = button.nextElementSibling;
