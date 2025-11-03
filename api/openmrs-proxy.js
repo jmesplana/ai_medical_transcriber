@@ -21,11 +21,24 @@ module.exports = async (req, res) => {
     }
 
     // Extract the path from the URL
-    // URL will be like: /api/openmrs-proxy?path=/ws/rest/v1/patient
-    const targetPath = req.query.path || req.url.replace('/api/openmrs-proxy', '');
+    // The original URL was like: /openmrs-proxy/ws/rest/v1/patient?q=something
+    // Vercel rewrites it to: /api/openmrs-proxy
+    // But we need to get the original path from the request
 
-    if (!targetPath) {
-        res.status(400).json({ error: 'No path provided' });
+    // Get the original URL from headers or reconstruct it
+    const originalUrl = req.headers['x-vercel-forwarded-url'] || req.url;
+
+    // Extract everything after /openmrs-proxy
+    let targetPath = '';
+    if (originalUrl.includes('/openmrs-proxy')) {
+        targetPath = originalUrl.split('/openmrs-proxy')[1];
+    } else {
+        // Fallback: try to get from the URL directly
+        targetPath = req.url.replace('/api/openmrs-proxy', '');
+    }
+
+    if (!targetPath || targetPath === '') {
+        res.status(400).json({ error: 'No path provided', originalUrl, url: req.url });
         return;
     }
 

@@ -9,8 +9,8 @@
       "destination": "/src/index.html"
     },
     {
-      "source": "/openmrs-proxy/:path*",
-      "destination": "/api/openmrs-proxy?path=/:path*"
+      "source": "/openmrs-proxy/(.*)",
+      "destination": "/api/openmrs-proxy"
     }
   ],
   "headers": [

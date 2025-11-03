@@ -8,9 +8,11 @@ const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const PORT = 3000;
 const OPENMRS_BASE_URL = 'https://dev3.openmrs.org/openmrs';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // MIME types for different file extensions
 const MIME_TYPES = {
@@ -70,6 +72,66 @@ const server = http.createServer((req, res) => {
     if (req.url.startsWith('/config/')) {
         const filePath = path.join('.', req.url);
         serveFile(filePath, 'application/json', res);
+        return;
+    }
+
+    // Proxy OpenAI API requests
+    if (req.url === '/api/openai') {
+        if (req.method !== 'POST') {
+            res.writeHead(405);
+            res.end('Method not allowed');
+            return;
+        }
+
+        if (!OPENAI_API_KEY) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'OpenAI API key not configured' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            const options = {
+                hostname: 'api.openai.com',
+                port: 443,
+                path: '/v1/chat/completions',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                    'Content-Length': Buffer.byteLength(body)
+                }
+            };
+
+            const proxyReq = https.request(options, (proxyRes) => {
+                let data = '';
+                proxyRes.on('data', chunk => {
+                    data += chunk;
+                });
+
+                proxyRes.on('end', () => {
+                    res.writeHead(proxyRes.statusCode, {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    });
+                    res.end(data);
+                });
+            });
+
+            proxyReq.on('error', (err) => {
+                console.error('OpenAI proxy error:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to process request' }));
+            });
+
+            proxyReq.write(body);
+            proxyReq.end();
+        });
+
         return;
     }
 

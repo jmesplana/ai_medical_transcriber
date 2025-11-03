@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aidstack Transcriber | Clinical Documentation</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --aidstack-navy: #1A365D;
+            --aidstack-orange: #FF6B35;
+            --slate-dark: #0F172A;
+            --slate-medium: #475569;
+            --slate-light: #94A3B8;
+            --slate-bg: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--slate-bg) 0%, #ffffff 100%);
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .mic-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--aidstack-orange);
+        }
+
+        .mic-container:hover {
+            background: #E55A2B;
+            transform: scale(1.05);
+        }
+
+        .mic-container.recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+            70% { box-shadow: 0 0 0 30px rgba(255, 107, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+        }
+
+        .speaker-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .speaker-doctor {
+            background: rgba(26, 54, 93, 0.1);
+            color: var(--aidstack-navy);
+        }
+
+        .speaker-patient {
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--aidstack-orange);
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #E2E8F0;
+            z-index: 0;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #E2E8F0;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active .progress-step-circle {
+            border-color: var(--aidstack-navy);
+            background: var(--aidstack-navy);
+            color: white;
+        }
+
+        .progress-step.completed .progress-step-circle {
+            border-color: var(--aidstack-orange);
+            background: var(--aidstack-orange);
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="card p-6" style="background: var(--aidstack-navy);">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div>
+                        <h1 class="font-display font-bold text-2xl text-white">
+                            <span style="color: var(--aidstack-orange);">Aidstack</span> Transcriber
+                        </h1>
+                        <p class="text-sm" style="color: var(--slate-light);">FHIR-compliant clinical documentation</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <span class="px-4 py-2 rounded-lg text-sm font-display font-medium" style="background: rgba(255, 255, 255, 0.1); color: white;">
+                        <i class="fas fa-shield-alt mr-2"></i>HIPAA Ready
+                    </span>
+                    <span id="connectorBadge" class="px-4 py-2 rounded-lg text-sm font-display font-medium" style="background: rgba(255, 255, 255, 0.1); color: white;">
+                        <i class="fas fa-plug mr-2"></i>No Connection
+                    </span>
+                    <button id="addConnectionBtn" class="px-4 py-2 rounded-lg text-sm font-display font-medium hover:bg-white hover:bg-opacity-20 transition-all" style="background: rgba(255, 107, 53, 0.2); color: white;">
+                        <i class="fas fa-plus mr-2"></i>Add Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="progress-steps">
+            <div class="progress-step active" id="progressStep1">
+                <div class="progress-step-circle">1</div>
+                <p class="text-sm font-display font-medium" style="color: var(--slate-dark);">Patient</p>
+            </div>
+            <div class="progress-step" id="progressStep2">
+                <div class="progress-step-circle">2</div>
+                <p class="text-sm font-display font-medium" style="color: var(--slate-medium);">Record</p>
+            </div>
+            <div class="progress-step" id="progressStep3">
+                <div class="progress-step-circle">3</div>
+                <p class="text-sm font-display font-medium" style="color: var(--slate-medium);">Review</p>
+            </div>
+            <div class="progress-step" id="progressStep4">
+                <div class="progress-step-circle">4</div>
+                <p class="text-sm font-display font-medium" style="color: var(--slate-medium);">Push to EHR</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto">
+        <!-- Step 0: EHR Connector Selection -->
+        <div class="step active" id="step0">
+            <div class="card p-8 mb-6">
+                <h2 class="font-display font-bold text-2xl mb-6" style="color: var(--slate-dark);">
+                    <i class="fas fa-plug mr-3" style="color: var(--aidstack-orange);"></i>
+                    Choose Your EHR Connection
+                </h2>
+
+                <p class="mb-6" style="color: var(--slate-medium);">
+                    Select how you want to store your clinical notes:
+                </p>
+
+                <div id="connectorList" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Connectors will be loaded dynamically -->
+                    <div class="text-center py-8" style="color: var(--slate-medium);">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading connectors...</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button id="continueFromConnectorBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-orange); color: white;" disabled>
+                        Continue to Patient Info <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Patient Information -->
+        <div class="step" id="step1">
+            <div class="card p-8 mb-6">
+                <h2 class="font-display font-bold text-2xl mb-6" style="color: var(--slate-dark);">
+                    <i class="fas fa-user-md mr-3" style="color: var(--aidstack-navy);"></i>
+                    Step 1: Patient Information
+                </h2>
+
+                <!-- Demo Mode: Quick Patient Selection -->
+                <div id="demoPatientSelection" style="display: none;">
+                    <p class="mb-4" style="color: var(--slate-medium);">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Choose a demo patient to get started quickly:
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" id="demoPatientList">
+                        <!-- Demo patients will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Patient Mode Toggle (for real EHRs) -->
+                <div id="patientModeToggle" class="mb-6">
+                    <div class="flex gap-4">
+                        <label class="flex items-center cursor-pointer px-6 py-3 border-2 rounded-lg transition-all" style="border-color: var(--aidstack-navy); background: rgba(26, 54, 93, 0.05);">
+                            <input type="radio" name="patientMode" value="new" class="mr-3" checked>
+                            <span class="font-display font-medium" style="color: var(--slate-dark);">New Patient</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer px-6 py-3 border-2 rounded-lg transition-all" style="border-color: var(--slate-light);">
+                            <input type="radio" name="patientMode" value="existing" class="mr-3">
+                            <span class="font-display font-medium" style="color: var(--slate-dark);">Existing Patient</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- New Patient Form -->
+                <div id="newPatientForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Given Name <span style="color: var(--aidstack-orange);">*</span></label>
+                            <input type="text" id="patientGivenName" placeholder="John" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Family Name <span style="color: var(--aidstack-orange);">*</span></label>
+                            <input type="text" id="patientFamilyName" placeholder="Doe" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Gender <span style="color: var(--aidstack-orange);">*</span></label>
+                            <select id="patientGender" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                                <option value="">Select...</option>
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Birth Date <span style="color: var(--aidstack-orange);">*</span></label>
+                            <input type="date" id="patientBirthdate" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">ID Type <span style="color: var(--aidstack-orange);">*</span></label>
+                            <select id="patientIdentifierType" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Patient ID <span style="color: var(--aidstack-orange);">*</span></label>
+                            <input type="text" id="patientIdentifier" placeholder="MRN-12345" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Patient Search -->
+                <div id="existingPatientForm" style="display: none;">
+                    <div class="mb-2">
+                        <input type="text" id="patientSearch" placeholder="Type to search by name or ID..." class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
+                        <p class="text-xs mt-2" style="color: var(--slate-medium);">
+                            <i class="fas fa-info-circle mr-1"></i>Results appear as you type (minimum 2 characters)
+                        </p>
+                    </div>
+                    <div id="searchResults" class="mt-4"></div>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button id="continueToRecordBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-orange); color: white;">
+                        Continue to Recording <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Recording -->
+        <div class="step" id="step2">
+            <div class="card p-8 mb-6">
+                <h2 class="font-display font-bold text-2xl mb-6" style="color: var(--slate-dark);">
+                    <i class="fas fa-microphone mr-3" style="color: var(--aidstack-orange);"></i>
+                    Step 2: Record Clinical Note
+                </h2>
+
+                <div class="text-center mb-8">
+                    <div id="micButton" class="mic-container mx-auto">
+                        <i id="micIcon" class="fas fa-microphone text-white text-4xl"></i>
+                    </div>
+                    <p id="status" class="mt-4 text-lg font-display font-semibold" style="color: var(--slate-dark);"></p>
+                    <p id="instructions" class="mt-2 text-sm" style="color: var(--slate-medium);"></p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-display font-semibold mb-3" style="color: var(--slate-dark);">Live Transcription:</label>
+                    <div id="transcription" class="p-6 rounded-lg min-h-[200px] text-base leading-relaxed" style="background: var(--slate-bg); border: 2px solid var(--slate-light);"></div>
+                </div>
+
+                <div class="flex justify-between">
+                    <button id="backToPatientBtn" class="px-6 py-3 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <button id="continueToReviewBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-navy); color: white;">
+                        Process & Review <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Review -->
+        <div class="step" id="step3">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="card p-6">
+                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
+                        <i class="fas fa-file-medical mr-2" style="color: var(--aidstack-orange);"></i>
+                        FHIR Structured Data
+                    </h3>
+                    <div id="processedData" class="space-y-4"></div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
+                        <i class="fas fa-code mr-2" style="color: #7C3AED;"></i>
+                        Raw AI Response
+                    </h3>
+                    <pre id="rawJsonPayload" class="p-4 rounded-lg text-xs font-mono max-h-[500px] overflow-auto" style="background: var(--slate-bg);"></pre>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button id="backToRecordBtn" class="px-6 py-3 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="pushToEHRBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-orange); color: white;">
+                    <i class="fas fa-database mr-2"></i>Push to OpenMRS
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Confirmation -->
+        <div class="step" id="step4">
+            <div class="card p-8 text-center">
+                <div class="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: rgba(255, 107, 53, 0.1);">
+                    <i class="fas fa-check-circle text-6xl" style="color: var(--aidstack-orange);"></i>
+                </div>
+                <h2 class="font-display font-bold text-3xl mb-4" style="color: var(--slate-dark);">Successfully Pushed to OpenMRS!</h2>
+                <p class="text-lg mb-6" style="color: var(--slate-medium);">Patient record and clinical note have been saved to the EHR system.</p>
+
+                <!-- Push Summary -->
+                <div id="pushSummary" class="text-left max-w-2xl mx-auto mb-8 p-6 rounded-lg" style="background: var(--slate-bg); border: 1px solid var(--slate-light);">
+                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
+                        <i class="fas fa-clipboard-check mr-2" style="color: var(--aidstack-orange);"></i>
+                        Record Summary
+                    </h3>
+                    <div class="space-y-3 text-sm" style="color: var(--slate-medium);">
+                        <!-- Summary will be populated dynamically -->
+                    </div>
+                </div>
+
+                <button id="startNewBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-navy); color: white;">
+                    <i class="fas fa-plus mr-2"></i>Start New Recording
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Connectors -->
+    <script src="/connectors/base-connector.js"></script>
+    <script src="/connectors/demo-connector.js"></script>
+    <script src="/connectors/openmrs-connector.js"></script>
+
+    <script>
+        // Configuration
+        const OPENMRS_URL = 'https://dev3.openmrs.org/openmrs';
+        const OPENMRS_USERNAME = 'admin';
+        const OPENMRS_PASSWORD = 'Admin123';
+
+        // Connector management
+        let availableConnectors = [];
+        let selectedConnector = null;
+        let currentConnector = null;
+
+        // State
+        let currentStep = 0;
+        let selectedPatient = null;
+        let fullTranscription = '';
+        let lastFHIRData = null;
+        let recognition = null;
+        let isRecording = false;
+        let encounterTypeUUID = null;
+        let encounterTypeName = null;
+        let locationUUID = null;
+        let locationName = null;
+        let visitTypeUUID = null;
+        let visitTypeName = null;
+        let clinicalNotesConceptUUID = null;
+        let diagnosisConceptUUID = null;
+        let lastPushSummary = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConnectors();
+            initSpeechRecognition();
+            setupEventListeners();
+        });
+
+        // Connector Management
+        async function loadConnectors() {
+            try {
+                const response = await fetch('/config/connectors.json');
+                const config = await response.json();
+
+                availableConnectors = config.connectors.filter(c => c.enabled);
+
+                const connectorList = document.getElementById('connectorList');
+                connectorList.innerHTML = '';
+
+                availableConnectors.forEach(connector => {
+                    const card = document.createElement('div');
+                    card.className = 'connector-card p-6 rounded-lg border-2 cursor-pointer transition-all';
+                    card.style.borderColor = 'var(--slate-light)';
+                    card.dataset.connectorId = connector.id;
+
+                    card.innerHTML = `
+                        <div class="text-4xl mb-3">${connector.icon}</div>
+                        <h3 class="font-display font-bold text-lg mb-2" style="color: var(--slate-dark);">${connector.name}</h3>
+                        <p class="text-sm mb-3" style="color: var(--slate-medium);">${connector.description}</p>
+                        ${connector.isDemo || !connector.requiresAuth ?
+                            '<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold" style="background: rgba(255, 107, 53, 0.1); color: var(--aidstack-orange);">No Login Required</span>' :
+                            '<span class="inline-block px-3 py-1 rounded-full text-xs" style="background: var(--slate-bg); color: var(--slate-medium);">Requires Login</span>'
+                        }
+                    `;
+
+                    card.addEventListener('click', () => selectConnectorCard(connector.id, card));
+                    connectorList.appendChild(card);
+                });
+
+                // Auto-select demo if it's the default
+                if (config.default) {
+                    const defaultCard = connectorList.querySelector(`[data-connector-id="${config.default}"]`);
+                    if (defaultCard) {
+                        selectConnectorCard(config.default, defaultCard);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Failed to load connectors:', error);
+                document.getElementById('connectorList').innerHTML = `
+                    <div class="col-span-2 text-center py-8" style="color: var(--aidstack-orange);">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Failed to load connectors. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function selectConnectorCard(connectorId, cardElement) {
+            // Remove selection from all cards
+            document.querySelectorAll('.connector-card').forEach(card => {
+                card.style.borderColor = 'var(--slate-light)';
+                card.style.background = 'white';
+            });
+
+            // Highlight selected card
+            cardElement.style.borderColor = 'var(--aidstack-orange)';
+            cardElement.style.background = 'rgba(255, 107, 53, 0.05)';
+
+            selectedConnector = availableConnectors.find(c => c.id === connectorId);
+            document.getElementById('continueFromConnectorBtn').disabled = false;
+
+            console.log('Selected connector:', selectedConnector.name);
+        }
+
+        async function initializeConnector() {
+            if (!selectedConnector) return false;
+
+            try {
+                // Create connector instance
+                if (selectedConnector.id === 'demo') {
+                    currentConnector = new DemoConnector(selectedConnector.config || {});
+                } else if (selectedConnector.id === 'openmrs') {
+                    currentConnector = new OpenMRSConnector(selectedConnector.config || {});
+                }
+
+                await currentConnector.initialize();
+                console.log('✅ Connector initialized:', currentConnector.name);
+
+                // Update metadata for display
+                const metadata = currentConnector.getMetadata();
+                encounterTypeName = metadata.encounterType;
+                visitTypeName = metadata.visitType;
+                locationName = metadata.location;
+
+                // Load identifier types (only for real EHRs)
+                if (!currentConnector.isDemo) {
+                    await loadIdentifierTypes();
+                }
+
+                // Update badge in header
+                updateConnectorBadge();
+
+                // Update Step 1 UI based on connector type
+                updatePatientFormUI();
+
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize connector:', error);
+                alert(`Failed to connect to ${selectedConnector.name}: ${error.message}`);
+                return false;
+            }
+        }
+
+        function updatePatientFormUI() {
+            const demoSelection = document.getElementById('demoPatientSelection');
+            const patientModeToggle = document.getElementById('patientModeToggle');
+            const newPatientForm = document.getElementById('newPatientForm');
+            const existingPatientForm = document.getElementById('existingPatientForm');
+
+            if (currentConnector && currentConnector.isDemo) {
+                // Demo Mode: Show quick patient picker
+                demoSelection.style.display = 'block';
+                patientModeToggle.style.display = 'none';
+                newPatientForm.style.display = 'none';
+                existingPatientForm.style.display = 'none';
+
+                // Load demo patients
+                loadDemoPatients();
+            } else {
+                // Real EHR: Show normal forms
+                demoSelection.style.display = 'none';
+                patientModeToggle.style.display = 'block';
+
+                // Show appropriate form based on mode
+                const mode = document.querySelector('input[name="patientMode"]:checked')?.value || 'new';
+                newPatientForm.style.display = mode === 'new' ? 'block' : 'none';
+                existingPatientForm.style.display = mode === 'existing' ? 'block' : 'none';
+            }
+        }
+
+        async function loadDemoPatients() {
+            const demoPatientList = document.getElementById('demoPatientList');
+
+            try {
+                // Get demo patients from connector
+                const patients = await currentConnector.searchPatients('');
+
+                demoPatientList.innerHTML = patients.map(patient => `
+                    <div class="demo-patient-card p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-orange-500"
+                         style="border-color: var(--slate-light);"
+                         onclick="selectDemoPatient('${patient.uuid}')">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3"
+                                 style="background: var(--slate-bg);">
+                                <i class="fas fa-user text-2xl" style="color: var(--slate-medium);"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-display font-semibold" style="color: var(--slate-dark);">
+                                    ${patient.givenName} ${patient.familyName}
+                                </h4>
+                                <p class="text-sm" style="color: var(--slate-medium);">
+                                    ${patient.gender === 'M' ? 'Male' : 'Female'} • ${patient.identifier}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Auto-select first patient
+                if (patients.length > 0) {
+                    selectDemoPatient(patients[0].uuid);
+                }
+            } catch (error) {
+                console.error('Failed to load demo patients:', error);
+                demoPatientList.innerHTML = '<p class="text-sm" style="color: var(--aidstack-orange);">Failed to load demo patients</p>';
+            }
+        }
+
+        window.selectDemoPatient = function(uuid) {
+            // Remove selection from all cards
+            document.querySelectorAll('.demo-patient-card').forEach(card => {
+                card.style.borderColor = 'var(--slate-light)';
+                card.style.background = 'white';
+            });
+
+            // Highlight selected card
+            const selectedCard = document.querySelector(`.demo-patient-card[onclick*="${uuid}"]`);
+            if (selectedCard) {
+                selectedCard.style.borderColor = 'var(--aidstack-orange)';
+                selectedCard.style.background = 'rgba(255, 107, 53, 0.05)';
+            }
+
+            // Find and set selected patient
+            currentConnector.searchPatients('').then(patients => {
+                selectedPatient = patients.find(p => p.uuid === uuid);
+                console.log('Selected demo patient:', selectedPatient);
+            });
+        }
+
+        function updateConnectorBadge() {
+            const badge = document.getElementById('connectorBadge');
+            if (!currentConnector) {
+                badge.innerHTML = '<i class="fas fa-plug mr-2"></i>No Connection';
+                badge.style.background = 'rgba(255, 255, 255, 0.1)';
+                return;
+            }
+
+            const info = currentConnector.getInfo();
+            const icon = info.icon || '🔌';
+
+            if (currentConnector.isDemo) {
+                badge.innerHTML = `<span class="mr-2">${icon}</span>${info.name}`;
+                badge.style.background = 'rgba(255, 107, 53, 0.2)';
+            } else {
+                badge.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${info.name}`;
+                badge.style.background = 'rgba(34, 197, 94, 0.2)'; // Green
+            }
+        }
+
+        function showAddConnectionModal() {
+            alert('Add Connection Feature\n\nTo add a new EHR connection:\n\n1. Create a connector class in /connectors/\n2. Add it to /config/connectors.json\n3. Refresh the page\n\nSee /connectors/README.md for detailed instructions.\n\nSupported connectors:\n- Demo Mode (built-in)\n- OpenMRS (built-in)\n- Custom connectors (add your own!)');
+        }
+
+        function setupEventListeners() {
+            // Add Connection button
+            document.getElementById('addConnectionBtn').addEventListener('click', showAddConnectionModal);
+
+            // Connector selection
+            document.getElementById('continueFromConnectorBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('continueFromConnectorBtn');
+                btn.textContent = 'Connecting...';
+                btn.disabled = true;
+
+                const success = await initializeConnector();
+                if (success) {
+                    goToStep(1);
+                } else {
+                    btn.textContent = 'Continue to Patient Info →';
+                    btn.disabled = false;
+                }
+            });
+            // Patient mode toggle
+            document.querySelectorAll('input[name="patientMode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const isNew = e.target.value === 'new';
+                    document.getElementById('newPatientForm').style.display = isNew ? 'block' : 'none';
+                    document.getElementById('existingPatientForm').style.display = isNew ? 'none' : 'block';
+                });
+            });
+
+            // Navigation buttons
+            document.getElementById('continueToRecordBtn').addEventListener('click', () => goToStep(2));
+            document.getElementById('backToPatientBtn').addEventListener('click', () => goToStep(1));
+            document.getElementById('continueToReviewBtn').addEventListener('click', processAndReview);
+            document.getElementById('backToRecordBtn').addEventListener('click', () => goToStep(2));
+            document.getElementById('pushToEHRBtn').addEventListener('click', pushToOpenMRS);
+            document.getElementById('startNewBtn').addEventListener('click', () => {
+                location.reload();
+            });
+
+            // Live search as user types
+            let searchTimeout;
+            const patientSearchInput = document.getElementById('patientSearch');
+            if (patientSearchInput) {
+                patientSearchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+
+                    if (query.length >= 2) {
+                        // Show loading state
+                        document.getElementById('searchResults').innerHTML = '<p class="text-sm" style="color: var(--slate-medium);">Searching...</p>';
+
+                        searchTimeout = setTimeout(() => {
+                            searchPatient();
+                        }, 500); // Wait 500ms after user stops typing
+                    } else {
+                        document.getElementById('searchResults').innerHTML = '';
+                    }
+                });
+            }
+        }
+
+        function goToStep(step) {
+            // Hide step 0 (connector selection)
+            const step0 = document.getElementById('step0');
+            if (step0) {
+                step0.classList.remove('active');
+                if (step > 0) {
+                    step0.style.display = 'none';
+                } else {
+                    step0.style.display = 'block';
+                }
+            }
+
+            // Hide all main steps
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                const progressEl = document.getElementById(`progressStep${i}`);
+
+                stepEl.classList.remove('active');
+                progressEl.classList.remove('active', 'completed');
+
+                if (i < step) {
+                    progressEl.classList.add('completed');
+                } else if (i === step) {
+                    stepEl.classList.add('active');
+                    progressEl.classList.add('active');
+                }
+            }
+
+            currentStep = step;
+        }
+
+        async function loadIdentifierTypes() {
+            try {
+                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
+                const response = await fetch('/openmrs-proxy/ws/rest/v1/patientidentifiertype', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const select = document.getElementById('patientIdentifierType');
+                    select.innerHTML = '<option value="">Select ID Type...</option>';
+
+                    data.results.forEach(type => {
+                        const option = document.createElement('option');
+                        option.value = type.uuid;
+                        option.textContent = type.display;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading identifier types:', error);
+            }
+        }
+
+        async function loadEncounterTypes() {
+            try {
+                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
+                const response = await fetch('/openmrs-proxy/ws/rest/v1/encountertype', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Available encounter types:', data.results);
+
+                    // Look for "Visit Note" encounter type specifically
+                    const visitNoteType = data.results.find(type =>
+                        type.display.toLowerCase().includes('visit note') ||
+                        type.display.toLowerCase().includes('visitnote')
+                    );
+
+                    if (visitNoteType) {
+                        encounterTypeUUID = visitNoteType.uuid;
+                        encounterTypeName = visitNoteType.display;
+                        console.log('Using encounter type:', visitNoteType.display, encounterTypeUUID);
+                    } else if (data.results && data.results.length > 0) {
+                        // Fallback to first available if Visit Note not found
+                        encounterTypeUUID = data.results[0].uuid;
+                        encounterTypeName = data.results[0].display;
+                        console.log('Visit Note not found, using:', data.results[0].display, encounterTypeUUID);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading encounter types:', error);
+            }
+        }
+
+        async function loadLocations() {
+            try {
+                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
+                const response = await fetch('/openmrs-proxy/ws/rest/v1/location', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Available locations:', data.results);
+
+                    // Use the first available location
+                    if (data.results && data.results.length > 0) {
+                        locationUUID = data.results[0].uuid;
+                        locationName = data.results[0].display;
+                        console.log('Using location:', data.results[0].display, locationUUID);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+
+        async function loadVisitTypes() {
+            try {
+                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
+                const response = await fetch('/openmrs-proxy/ws/rest/v1/visittype', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Available visit types:', data.results);
+
+                    // Use the first available visit type
+                    if (data.results && data.results.length > 0) {
+                        visitTypeUUID = data.results[0].uuid;
+                        visitTypeName = data.results[0].display;
+                        console.log('Using visit type:', data.results[0].display, visitTypeUUID);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading visit types:', error);
+            }
+        }
+
+        async function loadConcepts() {
+            try {
+                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
+
+                // Search for Clinical Notes concept
+                const notesResponse = await fetch('/openmrs-proxy/ws/rest/v1/concept?q=clinical%20notes', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (notesResponse.ok) {
+                    const notesData = await notesResponse.json();
+                    console.log('Clinical notes concepts:', notesData.results);
+
+                    if (notesData.results && notesData.results.length > 0) {
+                        clinicalNotesConceptUUID = notesData.results[0].uuid;
+                        console.log('Using clinical notes concept:', notesData.results[0].display, clinicalNotesConceptUUID);
+                    }
+                }
+
+                // Search for Diagnosis concept
+                const diagResponse = await fetch('/openmrs-proxy/ws/rest/v1/concept?q=diagnosis', {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (diagResponse.ok) {
+                    const diagData = await diagResponse.json();
+                    console.log('Diagnosis concepts:', diagData.results);
+
+                    if (diagData.results && diagData.results.length > 0) {
+                        diagnosisConceptUUID = diagData.results[0].uuid;
+                        console.log('Using diagnosis concept:', diagData.results[0].display, diagnosisConceptUUID);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading concepts:', error);
+            }
+        }
+
+        async function searchPatient() {
+            const query = document.getElementById('patientSearch').value.trim();
+            if (!query) return;
+
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '<p class="text-sm" style="color: var(--slate-medium);">Searching...</p>';
+
+            try {
+                if (!currentConnector) {
+                    throw new Error('No connector selected');
+                }
+
+                const results = await currentConnector.searchPatients(query);
+                displaySearchResults(results);
+            } catch (error) {
+                searchResults.innerHTML = '<p class="text-sm" style="color: var(--aidstack-orange);">Error: ' + error.message + '</p>';
+            }
+        }
+
+        function displaySearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+
+            if (results.length === 0) {
+                searchResults.innerHTML = '<p class="text-sm" style="color: var(--slate-medium);">No patients found</p>';
+                return;
+            }
+
+            searchResults.innerHTML = '';
+            results.forEach(patient => {
+                const name = patient.display || 'Unknown Patient';
+                const identifier = patient.identifiers?.[0]?.display || 'No ID';
+
+                const div = document.createElement('div');
+                div.className = 'p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md';
+                div.style.borderColor = 'var(--slate-light)';
+                div.innerHTML = `
+                    <div class="font-display font-semibold" style="color: var(--slate-dark);">${name}</div>
+                    <div class="text-sm" style="color: var(--slate-medium);">ID: ${identifier}</div>
+                `;
+                div.onclick = () => selectPatient(patient, div);
+                searchResults.appendChild(div);
+            });
+        }
+
+        function selectPatient(patient, element) {
+            selectedPatient = patient;
+            const name = patient.display || 'Unknown Patient';
+            const identifier = patient.identifiers?.[0]?.display || 'No ID';
+
+            // Clear search results and show only selected patient
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = `
+                <div class="p-4 border-2 rounded-lg" style="border-color: var(--aidstack-navy); background: rgba(26, 54, 93, 0.05);">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-display font-semibold text-lg" style="color: var(--slate-dark);">
+                                <i class="fas fa-check-circle mr-2" style="color: var(--aidstack-navy);"></i>
+                                ${name}
+                            </div>
+                            <div class="text-sm mt-1" style="color: var(--slate-medium);">ID: ${identifier}</div>
+                        </div>
+                        <button onclick="clearPatientSelection()" class="px-3 py-1 rounded text-sm font-display font-medium" style="background: var(--slate-light); color: white;">
+                            Change
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Clear the search input
+            document.getElementById('patientSearch').value = '';
+        }
+
+        function clearPatientSelection() {
+            selectedPatient = null;
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                document.getElementById('status').textContent = 'Speech recognition not supported in this browser';
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById('micButton').classList.add('recording');
+                document.getElementById('status').textContent = 'Listening... Speak clearly';
+                fullTranscription = '';
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+                document.getElementById('status').textContent = 'Recording stopped';
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                fullTranscription += finalTranscript;
+                document.getElementById('transcription').innerHTML =
+                    fullTranscription + '<span style="color: var(--slate-medium); opacity: 0.6;">' + interimTranscript + '</span>';
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+                document.getElementById('status').textContent = 'Error: ' + event.error;
+            };
+
+            document.getElementById('micButton').onclick = () => {
+                if (!isRecording) {
+                    recognition.start();
+                } else {
+                    recognition.stop();
+                }
+            };
+        }
+
+        async function processAndReview() {
+            if (!fullTranscription.trim()) {
+                alert('Please record some audio first');
+                return;
+            }
+
+            goToStep(3);
+            document.getElementById('status').textContent = 'Processing with AI...';
+
+            try {
+                // Call our serverless function which securely uses the API key
+                const response = await fetch('/api/openai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4",
+                        messages: [{
+                            role: "user",
+                            content: `Extract FHIR-compliant medical data from this transcription. Return ONLY a JSON object (no markdown, no explanations) with this structure:
+{
+  "resourceType": "Bundle",
+  "entry": [
+    {"resource": {"resourceType": "Condition", "clinicalStatus": {"text": "active"}, "category": [{"text": "diagnosis"}], "code": {"text": "actual diagnosis here"}}},
+    {"resource": {"resourceType": "Observation", "status": "final", "category": [{"text": "symptom"}], "code": {"text": "symptom here"}}},
+    {"resource": {"resourceType": "MedicationStatement", "status": "active", "medicationCodeableConcept": {"text": "medication"}}},
+    {"resource": {"resourceType": "Procedure", "status": "completed", "code": {"text": "procedure"}}}
+  ]
+}
+
+IMPORTANT DISTINCTIONS:
+- SYMPTOMS (use Observation): headache, fever, diarrhea, nausea, cough, pain, fatigue, etc. - things the patient FEELS
+- DIAGNOSES (use Condition): pneumonia, diabetes, hypertension, migraine disorder, etc. - actual medical conditions/diseases
+- If unsure whether something is a symptom or diagnosis, use Observation for symptoms
+
+Transcription: ${fullTranscription}`
+                        }],
+                        temperature: 0.3,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(`OpenAI API error (${response.status}): ${errorData.error?.message || response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('Invalid response from OpenAI API');
+                }
+
+                const aiResponse = data.choices[0].message.content;
+
+                lastFHIRData = aiResponse;
+                document.getElementById('rawJsonPayload').textContent = aiResponse;
+                document.getElementById('status').textContent = 'AI Processing Complete!';
+                displayFHIRData(aiResponse);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error processing with AI';
+                document.getElementById('processedData').innerHTML =
+                    `<p style="color: var(--aidstack-orange);">Error: ${error.message}</p>`;
+                document.getElementById('rawJsonPayload').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        function displayFHIRData(data) {
+            const container = document.getElementById('processedData');
+
+            try {
+                // Extract JSON
+                let jsonStr = data;
+                const codeBlockMatch = data.match(/```json\s*([\s\S]*?)\s*```/);
+                if (codeBlockMatch) {
+                    jsonStr = codeBlockMatch[1];
+                }
+
+                const fhir = JSON.parse(jsonStr);
+                console.log('Parsed FHIR:', fhir);
+
+                const entries = fhir.entry || [];
+
+                container.innerHTML = '';
+
+                // Symptoms (Observations)
+                const symptoms = entries.filter(e => e.resource?.resourceType === 'Observation' &&
+                    e.resource.category?.[0]?.text === 'symptom');
+                if (symptoms.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Symptoms</h4>
+                        <ul class="space-y-1">
+                            ${symptoms.map(s => `<li class="text-sm">• ${s.resource.code?.text || 'Unknown'}</li>`).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Diagnoses (Conditions)
+                const conditions = entries.filter(e => e.resource?.resourceType === 'Condition');
+                if (conditions.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Diagnoses</h4>
+                        <ul class="space-y-1">
+                            ${conditions.map(c => `<li class="text-sm">• ${c.resource.code?.text || 'Unknown'}</li>`).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Medications
+                const meds = entries.filter(e => e.resource?.resourceType === 'MedicationStatement');
+                if (meds.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Medications</h4>
+                        <ul class="space-y-1">
+                            ${meds.map(m => `<li class="text-sm">• ${m.resource.medicationCodeableConcept?.text || 'Unknown'}</li>`).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Procedures
+                const procs = entries.filter(e => e.resource?.resourceType === 'Procedure');
+                if (procs.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Procedures</h4>
+                        <ul class="space-y-1">
+                            ${procs.map(p => `<li class="text-sm">• ${p.resource.code?.text || 'Unknown'}</li>`).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(section);
+                }
+
+            } catch (error) {
+                console.error('FHIR parsing error:', error);
+                container.innerHTML = `<p style="color: var(--aidstack-orange);">Error parsing FHIR data: ${error.message}</p>`;
+            }
+        }
+
+        function updatePushSummary() {
+            if (!lastPushSummary) return;
+
+            const summaryDiv = document.querySelector('#pushSummary .space-y-3');
+
+            let diagnosesHTML = '';
+            if (lastPushSummary.diagnoses.length > 0) {
+                diagnosesHTML = lastPushSummary.diagnoses.map(d =>
+                    `<div class="pl-4">• ${d}</div>`
+                ).join('');
+            } else {
+                diagnosesHTML = '<div class="pl-4" style="color: var(--slate-light);">No diagnoses recorded</div>';
+            }
+
+            let symptomsHTML = '';
+            if (lastPushSummary.symptoms && lastPushSummary.symptoms.length > 0) {
+                symptomsHTML = lastPushSummary.symptoms.map(s =>
+                    `<div class="pl-4">• ${s}</div>`
+                ).join('');
+            } else {
+                symptomsHTML = '<div class="pl-4" style="color: var(--slate-light);">No symptoms recorded</div>';
+            }
+
+            summaryDiv.innerHTML = `
+                <div>
+                    <strong style="color: var(--slate-dark);">Patient:</strong> ${lastPushSummary.patient}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Visit Type:</strong> ${lastPushSummary.visitType}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Encounter Type:</strong>
+                    <span style="color: var(--aidstack-orange); font-weight: 600;">${lastPushSummary.encounterType}</span>
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Location:</strong> ${lastPushSummary.location}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Timestamp:</strong> ${lastPushSummary.timestamp}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Clinical Notes:</strong>
+                    ${lastPushSummary.hasNotes ? '<span style="color: green;">✓ Recorded</span>' : '<span style="color: var(--slate-light);">None</span>'}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Symptoms (${lastPushSummary.symptomsCount || 0}):</strong>
+                    ${symptomsHTML}
+                </div>
+                <div>
+                    <strong style="color: var(--slate-dark);">Diagnoses (${lastPushSummary.diagnosesCount}):</strong>
+                    ${diagnosesHTML}
+                </div>
+            `;
+        }
+
+        async function pushToOpenMRS() {
+            document.getElementById('pushToEHRBtn').textContent = 'Pushing...';
+
+            try {
+                // Check if connector is initialized
+                if (!currentConnector) {
+                    throw new Error('No connector selected. Please refresh and select a connector.');
+                }
+
+                // Get patient UUID
+                let patientUuid;
+                let patient;
+
+                // Demo mode: Use auto-selected patient
+                if (currentConnector.isDemo) {
+                    if (!selectedPatient) {
+                        alert('Please select a demo patient');
+                        return;
+                    }
+                    patient = selectedPatient;
+                    patientUuid = selectedPatient.uuid;
+                } else {
+                    // Real EHR: Check mode
+                    const patientMode = document.querySelector('input[name="patientMode"]:checked').value;
+
+                    if (patientMode === 'existing') {
+                        if (!selectedPatient) {
+                            alert('Please select a patient');
+                            return;
+                        }
+                        patient = selectedPatient;
+                        patientUuid = selectedPatient.uuid;
+                    } else {
+                    // Create new patient using connector
+                    const patientData = {
+                        givenName: document.getElementById('patientGivenName').value,
+                        familyName: document.getElementById('patientFamilyName').value,
+                        gender: document.getElementById('patientGender').value,
+                        birthdate: document.getElementById('patientBirthdate').value,
+                        identifier: document.getElementById('patientIdentifier').value,
+                        identifierType: document.getElementById('patientIdentifierType')?.value
+                    };
+
+                        patient = await currentConnector.createPatient(patientData);
+                        patientUuid = patient.uuid;
+                    }
+                }
+
+                // Step 1: Get or create visit using connector
+                const visit = await currentConnector.getOrCreateVisit(patientUuid);
+                console.log('Visit:', visit);
+
+                // Step 2: Create encounter using connector
+                const encounter = await currentConnector.createEncounter({
+                    patientUuid: patientUuid,
+                    visitUuid: visit.uuid
+                });
+                console.log('Encounter created:', encounter);
+
+                // Step 3: Add clinical notes using connector
+                if (fullTranscription) {
+                    await currentConnector.addClinicalNotes(encounter.uuid, fullTranscription, patientUuid);
+                    console.log('Clinical notes added');
+                }
+
+                // Step 4: Add diagnoses and symptoms from FHIR data using connector
+                const diagnoses = [];
+                const symptoms = [];
+                if (lastFHIRData) {
+                    try {
+                        // Extract data from FHIR
+                        let jsonStr = lastFHIRData;
+                        const codeBlockMatch = lastFHIRData.match(/```json\s*([\s\S]*?)\s*```/);
+                        if (codeBlockMatch) {
+                            jsonStr = codeBlockMatch[1];
+                        }
+
+                        const fhir = JSON.parse(jsonStr);
+
+                        // Add diagnoses (Conditions)
+                        const conditions = fhir.entry?.filter(e => e.resource?.resourceType === 'Condition') || [];
+                        for (const condition of conditions) {
+                            const diagnosis = condition.resource.code?.text || 'Unknown diagnosis';
+                            diagnoses.push(diagnosis);
+                            await currentConnector.addDiagnosis(encounter.uuid, diagnosis, patientUuid);
+                            console.log('Diagnosis added:', diagnosis);
+                        }
+
+                        // Add symptoms (Observations)
+                        // For now, symptoms will be added as clinical notes since connectors don't have addSymptom method
+                        const observations = fhir.entry?.filter(e =>
+                            e.resource?.resourceType === 'Observation' &&
+                            e.resource.category?.[0]?.text === 'symptom'
+                        ) || [];
+                        for (const obs of observations) {
+                            const symptom = obs.resource.code?.text || 'Unknown symptom';
+                            symptoms.push(symptom);
+                            console.log('Symptom noted:', symptom);
+                        }
+
+                        // Add symptoms as a note if there are any
+                        if (symptoms.length > 0 && currentConnector.addClinicalNotes) {
+                            const symptomNote = 'Reported symptoms: ' + symptoms.join(', ');
+                            await currentConnector.addClinicalNotes(encounter.uuid, symptomNote, patientUuid);
+                            console.log('Symptoms added as note');
+                        }
+                    } catch (error) {
+                        console.warn('Error adding diagnoses/symptoms:', error);
+                    }
+                }
+
+                // Build summary for display
+                const patientName = patient?.display ||
+                    `${document.getElementById('patientGivenName')?.value} ${document.getElementById('patientFamilyName')?.value}` ||
+                    'Unknown Patient';
+
+                const metadata = currentConnector.getMetadata();
+
+                lastPushSummary = {
+                    patient: patientName,
+                    visitType: metadata.visitType,
+                    encounterType: metadata.encounterType,
+                    location: metadata.location,
+                    timestamp: new Date().toLocaleString(),
+                    diagnosesCount: diagnoses.length,
+                    diagnoses: diagnoses,
+                    symptomsCount: symptoms.length,
+                    symptoms: symptoms,
+                    hasNotes: !!fullTranscription
+                };
+
+                updatePushSummary();
+                goToStep(4);
+
+            } catch (error) {
+                console.error('OpenMRS push error:', error);
+                alert('Error pushing to OpenMRS: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

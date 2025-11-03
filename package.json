@@ -8,7 +8,18 @@
     "dev": "node server.js",
     "old": "node proxy-server.js"
   },
-  "keywords": ["medical", "transcription", "FHIR", "OpenMRS", "AI", "EHR", "connectors"],
+  "keywords": [
+    "medical",
+    "transcription",
+    "FHIR",
+    "OpenMRS",
+    "AI",
+    "EHR",
+    "connectors"
+  ],
   "author": "Aidstack",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
 }
