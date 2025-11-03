@@ -19,9 +19,36 @@
             --slate-bg: #F8FAFC;
         }
 
+        /* Dark mode */
+        [data-theme="dark"] {
+            --aidstack-navy: #4A7BA7;
+            --slate-dark: #F8FAFC;
+            --slate-medium: #CBD5E1;
+            --slate-light: #64748B;
+            --slate-bg: #1E293B;
+        }
+
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        }
+
+        [data-theme="dark"] .card {
+            background: #1E293B;
+            border-color: #334155;
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: #0F172A;
+            border-color: #334155;
+            color: #F8FAFC;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--slate-bg) 0%, #ffffff 100%);
+            transition: background 0.3s ease;
         }
 
         .font-display { font-family: 'Space Grotesk', sans-serif; }
@@ -142,6 +169,55 @@
             background: var(--aidstack-orange);
             color: white;
         }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .mic-container {
+                width: 120px;
+                height: 120px;
+            }
+
+            .mic-container i {
+                font-size: 3rem !important;
+            }
+
+            .progress-steps {
+                display: none; /* Hide on mobile, too complex */
+            }
+
+            .card {
+                padding: 16px !important;
+            }
+
+            #transcription {
+                font-size: 18px !important; /* Larger for mobile */
+                min-height: 250px !important;
+            }
+
+            .grid.md\:grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Accessibility */
+        *:focus-visible {
+            outline: 2px solid var(--aidstack-orange);
+            outline-offset: 2px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4">
@@ -164,6 +240,12 @@
                     <span id="connectorBadge" class="px-4 py-2 rounded-lg text-sm font-display font-medium" style="background: rgba(255, 255, 255, 0.1); color: white;">
                         <i class="fas fa-plug mr-2"></i>No Connection
                     </span>
+                    <button id="darkModeToggle" class="px-4 py-2 rounded-lg text-sm font-display font-medium hover:bg-white hover:bg-opacity-20 transition-all" style="background: rgba(255, 255, 255, 0.1); color: white;" title="Toggle dark mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="keyboardShortcutsBtn" class="px-4 py-2 rounded-lg text-sm font-display font-medium hover:bg-white hover:bg-opacity-20 transition-all" style="background: rgba(255, 255, 255, 0.1); color: white;" title="Keyboard shortcuts (?)">
+                        <i class="fas fa-keyboard"></i>
+                    </button>
                     <button id="addConnectionBtn" class="px-4 py-2 rounded-lg text-sm font-display font-medium hover:bg-white hover:bg-opacity-20 transition-all" style="background: rgba(255, 107, 53, 0.2); color: white;">
                         <i class="fas fa-plus mr-2"></i>Add Connection
                     </button>
@@ -321,16 +403,42 @@
                 </h2>
 
                 <div class="text-center mb-8">
-                    <div id="micButton" class="mic-container mx-auto">
+                    <div id="micButton" class="mic-container mx-auto" role="button" tabindex="0" aria-label="Start or stop recording" aria-pressed="false">
                         <i id="micIcon" class="fas fa-microphone text-white text-4xl"></i>
                     </div>
                     <p id="status" class="mt-4 text-lg font-display font-semibold" style="color: var(--slate-dark);"></p>
                     <p id="instructions" class="mt-2 text-sm" style="color: var(--slate-medium);"></p>
+
+                    <!-- Speaker Toggle -->
+                    <div class="mt-4 flex items-center justify-center gap-2">
+                        <span class="text-sm" style="color: var(--slate-medium);">Speaker:</span>
+                        <div class="inline-flex rounded-lg border-2" style="border-color: var(--slate-light);">
+                            <button id="speakerDoctor" class="px-4 py-2 text-sm font-display font-medium transition-all rounded-l-lg" style="background: var(--aidstack-navy); color: white;">
+                                <i class="fas fa-user-md mr-1"></i>Doctor
+                            </button>
+                            <button id="speakerPatient" class="px-4 py-2 text-sm font-display font-medium transition-all rounded-r-lg" style="background: white; color: var(--slate-dark);">
+                                <i class="fas fa-user mr-1"></i>Patient
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-display font-semibold mb-3" style="color: var(--slate-dark);">Live Transcription:</label>
-                    <div id="transcription" class="p-6 rounded-lg min-h-[200px] text-base leading-relaxed" style="background: var(--slate-bg); border: 2px solid var(--slate-light);"></div>
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-display font-semibold" style="color: var(--slate-dark);">Live Transcription:</label>
+                        <div class="flex gap-2">
+                            <button id="editTranscriptionBtn" class="px-3 py-1 text-xs rounded-lg border" style="border-color: var(--slate-light); color: var(--slate-medium);" title="Edit transcription">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button id="clearTranscriptionBtn" class="px-3 py-1 text-xs rounded-lg border" style="border-color: var(--slate-light); color: var(--slate-medium);" title="Clear transcription">
+                                <i class="fas fa-trash mr-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div id="transcription" contenteditable="false" role="textbox" aria-label="Clinical note transcription" aria-multiline="true" class="p-6 rounded-lg min-h-[200px] text-base leading-relaxed" style="background: var(--slate-bg); border: 2px solid var(--slate-light); line-height: 1.7; font-size: 16px;"></div>
+                    <p class="text-xs mt-2" style="color: var(--slate-medium);">
+                        <i class="fas fa-info-circle mr-1"></i>Click "Edit" to manually correct transcription before processing
+                    </p>
                 </div>
 
                 <div class="flex justify-between">
@@ -346,30 +454,124 @@
 
         <!-- Step 3: Review -->
         <div class="step" id="step3">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="card p-6">
-                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
+            <!-- Main Clinical View -->
+            <div class="card p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-display font-semibold text-lg" style="color: var(--slate-dark);">
                         <i class="fas fa-file-medical mr-2" style="color: var(--aidstack-orange);"></i>
-                        FHIR Structured Data
+                        Clinical Documentation
                     </h3>
-                    <div id="processedData" class="space-y-4"></div>
+                    <div class="flex gap-2">
+                        <button id="addDiagnosisBtn" class="px-3 py-1 text-xs rounded-lg border hover:bg-gray-50" style="border-color: var(--slate-light); color: var(--slate-medium);" title="Add diagnosis">
+                            <i class="fas fa-plus mr-1"></i>Add Diagnosis
+                        </button>
+                        <button id="regenerateBtn" class="px-3 py-1 text-xs rounded-lg border hover:bg-gray-50" style="border-color: var(--slate-light); color: var(--slate-medium);" title="Re-run AI analysis">
+                            <i class="fas fa-sync mr-1"></i>Regenerate
+                        </button>
+                    </div>
                 </div>
-                <div class="card p-6">
-                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
-                        <i class="fas fa-code mr-2" style="color: #7C3AED;"></i>
-                        Raw AI Response
-                    </h3>
-                    <pre id="rawJsonPayload" class="p-4 rounded-lg text-xs font-mono max-h-[500px] overflow-auto" style="background: var(--slate-bg);"></pre>
-                </div>
+                <div id="processedData" class="space-y-4"></div>
             </div>
 
-            <div class="flex justify-between">
-                <button id="backToRecordBtn" class="px-6 py-3 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
-                    <i class="fas fa-arrow-left mr-2"></i>Back
-                </button>
+            <!-- Collapsible Raw JSON -->
+            <div class="card p-4 mb-6" id="rawDataCard" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-display font-semibold text-sm" style="color: var(--slate-dark);">
+                        <i class="fas fa-code mr-2" style="color: #7C3AED;"></i>
+                        Raw FHIR JSON
+                    </h3>
+                    <button id="closeRawDataBtn" class="text-xs" style="color: var(--slate-medium);">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+                <pre id="rawJsonPayload" class="p-4 rounded-lg text-xs font-mono max-h-[400px] overflow-auto" style="background: var(--slate-bg);"></pre>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div class="flex gap-2">
+                    <button id="backToRecordBtn" class="px-6 py-3 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <button id="showRawDataBtn" class="px-4 py-3 rounded-lg font-display font-medium text-sm" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-medium);">
+                        <i class="fas fa-code mr-2"></i>View Raw Data
+                    </button>
+                </div>
                 <button id="pushToEHRBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-orange); color: white;">
-                    <i class="fas fa-database mr-2"></i>Push to OpenMRS
+                    <i class="fas fa-database mr-2"></i>Push to EHR
                 </button>
+            </div>
+        </div>
+
+        <!-- Edit Diagnosis Modal -->
+        <div id="editDiagnosisModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+            <div class="card p-6" style="max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-display font-semibold text-lg" style="color: var(--slate-dark);">Edit Diagnosis</h3>
+                    <button onclick="closeEditModal()" style="color: var(--slate-medium); font-size: 24px; line-height: 1;">×</button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Diagnosis</label>
+                        <input type="text" id="editDiagnosisName" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--slate-light);" placeholder="e.g., Pneumonia">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">ICD-10 Code</label>
+                        <input type="text" id="editDiagnosisICD10" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--slate-light);" placeholder="e.g., J18.9">
+                        <p class="text-xs mt-1" style="color: var(--slate-medium);">Leave blank for AI to suggest</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Confidence</label>
+                        <input type="range" id="editDiagnosisConfidence" min="0" max="100" value="80" class="w-full">
+                        <div class="flex justify-between text-xs" style="color: var(--slate-medium);">
+                            <span>Low</span>
+                            <span id="confidenceValue">80%</span>
+                            <span>High</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Evidence/Notes</label>
+                        <textarea id="editDiagnosisEvidence" rows="3" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--slate-light);" placeholder="Supporting evidence from exam..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeEditModal()" class="flex-1 px-4 py-2 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
+                        Cancel
+                    </button>
+                    <button onclick="saveDiagnosisEdit()" class="flex-1 px-4 py-2 rounded-lg font-display font-medium" style="background: var(--aidstack-orange); color: white;">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connector Settings Modal -->
+        <div id="connectorSettingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+            <div class="card p-6" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-display font-semibold text-lg" style="color: var(--slate-dark);">
+                        <i class="fas fa-cog mr-2"></i>
+                        <span id="settingsConnectorName">Connector Settings</span>
+                    </h3>
+                    <button onclick="closeConnectorSettings()" style="color: var(--slate-medium); font-size: 24px; line-height: 1;">×</button>
+                </div>
+
+                <div id="connectorSettingsFields" class="space-y-4">
+                    <!-- Settings fields will be dynamically populated -->
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeConnectorSettings()" class="flex-1 px-4 py-2 rounded-lg font-display font-medium" style="background: white; border: 2px solid var(--slate-light); color: var(--slate-dark);">
+                        Cancel
+                    </button>
+                    <button onclick="saveConnectorSettings()" class="flex-1 px-4 py-2 rounded-lg font-display font-medium" style="background: var(--aidstack-orange); color: white;">
+                        <i class="fas fa-save mr-2"></i>Save Settings
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -405,6 +607,13 @@
     <script src="/connectors/demo-connector.js"></script>
     <script src="/connectors/openmrs-connector.js"></script>
 
+    <!-- Load Modular Utilities -->
+    <script src="/src/js/toast.js"></script>
+    <script src="/src/js/medical-dictionary.js"></script>
+    <script src="/src/js/session-manager.js"></script>
+    <script src="/src/js/keyboard-shortcuts.js"></script>
+    <script src="/src/js/onboarding.js"></script>
+
     <script>
         // Configuration
         const OPENMRS_URL = 'https://dev3.openmrs.org/openmrs';
@@ -432,12 +641,21 @@
         let clinicalNotesConceptUUID = null;
         let diagnosisConceptUUID = null;
         let lastPushSummary = null;
+        let currentSpeaker = 'doctor'; // 'doctor' or 'patient'
+        let autoSaveInterval = null;
+        let isEditMode = false;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await loadConnectors();
             initSpeechRecognition();
             setupEventListeners();
+            initDarkMode();
+            initKeyboardShortcuts();
+            initAutoSave();
+            checkSessionRecovery();
+            // Start onboarding for new users
+            setTimeout(() => OnboardingTour.start(), 1000);
         });
 
         // Connector Management
@@ -447,6 +665,18 @@
                 const config = await response.json();
 
                 availableConnectors = config.connectors.filter(c => c.enabled);
+
+                // Load saved configurations from localStorage
+                try {
+                    const savedConfigs = JSON.parse(localStorage.getItem('connectorConfigs') || '{}');
+                    availableConnectors.forEach(connector => {
+                        if (savedConfigs[connector.id]) {
+                            connector.config = { ...connector.config, ...savedConfigs[connector.id] };
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Could not load saved connector configs:', e);
+                }
 
                 const connectorList = document.getElementById('connectorList');
                 connectorList.innerHTML = '';
@@ -458,7 +688,14 @@
                     card.dataset.connectorId = connector.id;
 
                     card.innerHTML = `
-                        <div class="text-4xl mb-3">${connector.icon}</div>
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="text-4xl">${connector.icon}</div>
+                            ${!connector.isDemo ? `
+                                <button onclick="event.stopPropagation(); openConnectorSettings('${connector.id}')" class="text-sm px-3 py-1 rounded border" style="border-color: var(--slate-light); color: var(--slate-medium);" title="Configure">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            ` : ''}
+                        </div>
                         <h3 class="font-display font-bold text-lg mb-2" style="color: var(--slate-dark);">${connector.name}</h3>
                         <p class="text-sm mb-3" style="color: var(--slate-medium);">${connector.description}</p>
                         ${connector.isDemo || !connector.requiresAuth ?
@@ -660,6 +897,34 @@
             // Add Connection button
             document.getElementById('addConnectionBtn').addEventListener('click', showAddConnectionModal);
 
+            // Dark mode toggle
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+
+            // Keyboard shortcuts button
+            document.getElementById('keyboardShortcutsBtn').addEventListener('click', () => {
+                KeyboardShortcuts.showHelp();
+            });
+
+            // Speaker toggle
+            document.getElementById('speakerDoctor').addEventListener('click', () => {
+                currentSpeaker = 'doctor';
+                updateSpeakerUI();
+            });
+            document.getElementById('speakerPatient').addEventListener('click', () => {
+                currentSpeaker = 'patient';
+                updateSpeakerUI();
+            });
+
+            // Edit transcription
+            document.getElementById('editTranscriptionBtn').addEventListener('click', toggleEditMode);
+            document.getElementById('clearTranscriptionBtn').addEventListener('click', () => {
+                if (confirm('Clear all transcription?')) {
+                    fullTranscription = '';
+                    document.getElementById('transcription').innerHTML = '';
+                    toast.info('Transcription cleared');
+                }
+            });
+
             // Connector selection
             document.getElementById('continueFromConnectorBtn').addEventListener('click', async () => {
                 const btn = document.getElementById('continueFromConnectorBtn');
@@ -693,6 +958,25 @@
                 location.reload();
             });
 
+            // Raw data toggle
+            document.getElementById('showRawDataBtn').addEventListener('click', () => {
+                document.getElementById('rawDataCard').style.display = 'block';
+                document.getElementById('showRawDataBtn').style.display = 'none';
+            });
+            document.getElementById('closeRawDataBtn').addEventListener('click', () => {
+                document.getElementById('rawDataCard').style.display = 'none';
+                document.getElementById('showRawDataBtn').style.display = 'inline-block';
+            });
+
+            // Edit diagnosis buttons
+            document.getElementById('addDiagnosisBtn').addEventListener('click', () => openEditModal());
+            document.getElementById('regenerateBtn').addEventListener('click', regenerateAIAnalysis);
+
+            // Confidence slider
+            document.getElementById('editDiagnosisConfidence').addEventListener('input', (e) => {
+                document.getElementById('confidenceValue').textContent = e.target.value + '%';
+            });
+
             // Live search as user types
             let searchTimeout;
             const patientSearchInput = document.getElementById('patientSearch');
@@ -713,6 +997,152 @@
                     }
                 });
             }
+        }
+
+        // Dark Mode Functions
+        function initDarkMode() {
+            const savedTheme = localStorage.getItem('aidstack_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateDarkModeIcon();
+        }
+
+        function toggleDarkMode() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('aidstack_theme', newTheme);
+            updateDarkModeIcon();
+            toast.success(`${newTheme === 'dark' ? 'Dark' : 'Light'} mode enabled`);
+        }
+
+        function updateDarkModeIcon() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+            const icon = document.querySelector('#darkModeToggle i');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        // Speaker Toggle Functions
+        function updateSpeakerUI() {
+            const doctorBtn = document.getElementById('speakerDoctor');
+            const patientBtn = document.getElementById('speakerPatient');
+
+            if (currentSpeaker === 'doctor') {
+                doctorBtn.style.background = 'var(--aidstack-navy)';
+                doctorBtn.style.color = 'white';
+                patientBtn.style.background = 'white';
+                patientBtn.style.color = 'var(--slate-dark)';
+            } else {
+                patientBtn.style.background = 'var(--aidstack-orange)';
+                patientBtn.style.color = 'white';
+                doctorBtn.style.background = 'white';
+                doctorBtn.style.color = 'var(--slate-dark)';
+            }
+        }
+
+        // Edit Mode Functions
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const transcriptionDiv = document.getElementById('transcription');
+            const btn = document.getElementById('editTranscriptionBtn');
+
+            if (isEditMode) {
+                transcriptionDiv.contentEditable = 'true';
+                transcriptionDiv.style.borderColor = 'var(--aidstack-orange)';
+                transcriptionDiv.style.outline = 'none';
+                btn.innerHTML = '<i class="fas fa-save mr-1"></i>Save';
+                btn.style.background = 'var(--aidstack-orange)';
+                btn.style.color = 'white';
+                btn.style.borderColor = 'var(--aidstack-orange)';
+                transcriptionDiv.focus();
+                toast.info('Edit mode enabled - click Save when done');
+            } else {
+                transcriptionDiv.contentEditable = 'false';
+                transcriptionDiv.style.borderColor = 'var(--slate-light)';
+                btn.innerHTML = '<i class="fas fa-edit mr-1"></i>Edit';
+                btn.style.background = '';
+                btn.style.color = 'var(--slate-medium)';
+                btn.style.borderColor = 'var(--slate-light)';
+                fullTranscription = transcriptionDiv.innerText;
+                toast.success('Transcription saved');
+            }
+        }
+
+        // Keyboard Shortcuts Init
+        function initKeyboardShortcuts() {
+            KeyboardShortcuts.init();
+
+            // Space to start/stop recording
+            KeyboardShortcuts.register('Space', () => {
+                if (currentStep === 2) {
+                    document.getElementById('micButton').click();
+                }
+            });
+
+            // Ctrl+S to save session
+            KeyboardShortcuts.register('Ctrl+S', () => {
+                saveCurrentSession();
+            });
+
+            // Escape to go back
+            KeyboardShortcuts.register('Escape', () => {
+                if (currentStep > 1) {
+                    goToStep(currentStep - 1);
+                }
+            });
+        }
+
+        // Auto-save Functions
+        function initAutoSave() {
+            autoSaveInterval = setInterval(() => {
+                if (fullTranscription.trim()) {
+                    localStorage.setItem('aidstack_autosave', JSON.stringify({
+                        transcription: fullTranscription,
+                        timestamp: new Date().toISOString(),
+                        step: currentStep
+                    }));
+                }
+            }, 30000); // Every 30 seconds
+        }
+
+        function checkSessionRecovery() {
+            const autosave = localStorage.getItem('aidstack_autosave');
+            if (autosave) {
+                try {
+                    const data = JSON.parse(autosave);
+                    const timeDiff = Date.now() - new Date(data.timestamp).getTime();
+
+                    // If autosave is less than 1 hour old
+                    if (timeDiff < 3600000 && data.transcription) {
+                        if (confirm('Found unsaved work from ' + new Date(data.timestamp).toLocaleString() + '. Restore it?')) {
+                            fullTranscription = data.transcription;
+                            document.getElementById('transcription').innerText = fullTranscription;
+                            toast.success('Session restored!');
+                        } else {
+                            localStorage.removeItem('aidstack_autosave');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error recovering session:', e);
+                }
+            }
+        }
+
+        function saveCurrentSession() {
+            if (!fullTranscription.trim()) {
+                toast.warning('No transcription to save');
+                return;
+            }
+
+            const sessionData = {
+                patient: selectedPatient,
+                transcription: fullTranscription,
+                fhirData: lastFHIRData ? JSON.parse(lastFHIRData) : null,
+                connector: currentConnector?.name || 'Unknown'
+            };
+
+            SessionManager.saveSession(sessionData);
         }
 
         function goToStep(step) {
@@ -1000,7 +1430,18 @@
                     }
                 }
 
-                fullTranscription += finalTranscript;
+                // Apply medical dictionary corrections
+                if (finalTranscript) {
+                    finalTranscript = MedicalDictionary.correctText(finalTranscript);
+
+                    // Add speaker tag
+                    const speakerTag = currentSpeaker === 'doctor'
+                        ? '<span class="speaker-tag speaker-doctor">Doctor</span> '
+                        : '<span class="speaker-tag speaker-patient">Patient</span> ';
+
+                    fullTranscription += speakerTag + finalTranscript + ' ';
+                }
+
                 document.getElementById('transcription').innerHTML =
                     fullTranscription + '<span style="color: var(--slate-medium); opacity: 0.6;">' + interimTranscript + '</span>';
             };
@@ -1023,16 +1464,16 @@
 
         async function processAndReview() {
             if (!fullTranscription.trim()) {
-                alert('Please record some audio first');
+                toast.warning('Please record some audio first');
                 return;
             }
 
             goToStep(3);
-            document.getElementById('status').textContent = 'Processing with AI...';
+            showLoadingOverlay('Processing with AI...');
 
             try {
                 // Call our serverless function which securely uses the API key
-                const response = await fetch('/api/openai', {
+                const response = await fetchWithRetry('/api/openai', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1041,21 +1482,65 @@
                         model: "gpt-4",
                         messages: [{
                             role: "user",
-                            content: `Extract FHIR-compliant medical data from this transcription. Return ONLY a JSON object (no markdown, no explanations) with this structure:
+                            content: `You are a clinical AI assistant. Extract FHIR-compliant medical data from this transcription with confidence scores, differential diagnosis, and ICD-10 codes.
+
+Return ONLY a JSON object (no markdown, no explanations) with this structure:
 {
   "resourceType": "Bundle",
   "entry": [
-    {"resource": {"resourceType": "Condition", "clinicalStatus": {"text": "active"}, "category": [{"text": "diagnosis"}], "code": {"text": "actual diagnosis here"}}},
-    {"resource": {"resourceType": "Observation", "status": "final", "category": [{"text": "symptom"}], "code": {"text": "symptom here"}}},
-    {"resource": {"resourceType": "MedicationStatement", "status": "active", "medicationCodeableConcept": {"text": "medication"}}},
-    {"resource": {"resourceType": "Procedure", "status": "completed", "code": {"text": "procedure"}}}
-  ]
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "clinicalStatus": {"text": "active"},
+        "category": [{"text": "diagnosis"}],
+        "code": {
+          "text": "diagnosis name",
+          "coding": [{"system": "ICD-10", "code": "A00.0", "display": "ICD-10 description"}]
+        },
+        "meta": {
+          "confidence": 0.95,
+          "evidence": "Brief explanation from transcription"
+        }
+      }
+    }
+  ],
+  "meta": {
+    "differentialDiagnosis": [
+      {
+        "condition": "Alternative diagnosis 1",
+        "icd10": "B00.0",
+        "probability": 0.85,
+        "reasoning": "Why this is likely"
+      },
+      {
+        "condition": "Alternative diagnosis 2",
+        "icd10": "C00.0",
+        "probability": 0.60,
+        "reasoning": "Why this is possible"
+      }
+    ],
+    "clinicalDecisionSupport": [
+      {
+        "type": "recommendation",
+        "message": "Consider ordering chest X-ray based on symptoms",
+        "priority": "medium"
+      }
+    ],
+    "qualityScore": {
+      "completeness": 0.85,
+      "documentation": "Good - includes HPI, symptoms, and diagnosis",
+      "missingElements": ["Physical exam findings", "Treatment plan"]
+    }
+  }
 }
 
 IMPORTANT DISTINCTIONS:
-- SYMPTOMS (use Observation): headache, fever, diarrhea, nausea, cough, pain, fatigue, etc. - things the patient FEELS
-- DIAGNOSES (use Condition): pneumonia, diabetes, hypertension, migraine disorder, etc. - actual medical conditions/diseases
-- If unsure whether something is a symptom or diagnosis, use Observation for symptoms
+- SYMPTOMS (use Observation): headache, fever, diarrhea, nausea, cough, pain, fatigue, etc.
+- DIAGNOSES (use Condition): pneumonia, diabetes, hypertension, migraine disorder, etc.
+- Confidence: 0-1 scale where 1.0 = certain, 0.5 = moderate confidence, <0.3 = uncertain
+- ICD-10 codes: MUST be complete and specific (e.g., "E11.9" not "E11", "I10" not "I1"). Use the most specific code available based on the clinical information. Include all subcategory digits.
+- Differential: Top 2-3 alternative diagnoses with reasoning
+- Clinical Decision Support: Practical recommendations based on clinical guidelines
 
 Transcription: ${fullTranscription}`
                         }],
@@ -1079,16 +1564,83 @@ Transcription: ${fullTranscription}`
 
                 lastFHIRData = aiResponse;
                 document.getElementById('rawJsonPayload').textContent = aiResponse;
-                document.getElementById('status').textContent = 'AI Processing Complete!';
                 displayFHIRData(aiResponse);
+                hideLoadingOverlay();
+                toast.success('AI processing complete!');
 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('status').textContent = 'Error processing with AI';
+                hideLoadingOverlay();
+                toast.error('Error processing with AI: ' + error.message);
                 document.getElementById('processedData').innerHTML =
-                    `<p style="color: var(--aidstack-orange);">Error: ${error.message}</p>`;
+                    `<div style="color: var(--aidstack-orange); padding: 20px; text-align: center;">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                        <p class="text-lg font-semibold mb-2">Processing Error</p>
+                        <p class="text-sm mb-4">${error.message}</p>
+                        <button onclick="processAndReview()" class="px-4 py-2 rounded-lg" style="background: var(--aidstack-orange); color: white;">
+                            <i class="fas fa-redo mr-2"></i>Retry
+                        </button>
+                    </div>`;
                 document.getElementById('rawJsonPayload').textContent = `Error: ${error.message}`;
             }
+        }
+
+        // Fetch with retry logic
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok || i === retries - 1) {
+                        return response;
+                    }
+                    toast.warning(`Retry ${i + 1}/${retries - 1}...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    toast.warning(`Network error, retrying... (${i + 1}/${retries - 1})`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        // Loading overlay
+        function showLoadingOverlay(message) {
+            const overlay = document.createElement('div');
+            overlay.id = 'loadingOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-center;
+                flex-direction: column;
+            `;
+            overlay.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px;">
+                    <div style="width: 60px; height: 60px; border: 4px solid var(--slate-light); border-top-color: var(--aidstack-orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <p style="font-size: 18px; font-weight: 600; color: var(--slate-dark); margin-bottom: 8px;">${message}</p>
+                    <p style="font-size: 14px; color: var(--slate-medium);">This may take a few moments...</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Add spin animation if not exists
+            if (!document.getElementById('spinAnimation')) {
+                const style = document.createElement('style');
+                style.id = 'spinAnimation';
+                style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                document.head.appendChild(style);
+            }
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.remove();
         }
 
         function displayFHIRData(data) {
@@ -1105,17 +1657,150 @@ Transcription: ${fullTranscription}`
                 const fhir = JSON.parse(jsonStr);
                 console.log('Parsed FHIR:', fhir);
 
+                // Store parsed FHIR for editing
+                parsedFHIR = fhir;
+
                 const entries = fhir.entry || [];
+                const meta = fhir.meta || {};
 
                 container.innerHTML = '';
 
-                // Symptoms (Observations)
+                // Quality Score Card
+                if (meta.qualityScore) {
+                    const qs = meta.qualityScore;
+                    const score = Math.round(qs.completeness * 100);
+                    const scoreColor = score >= 80 ? '#059669' : score >= 60 ? '#F59E0B' : '#DC2626';
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <div class="mb-4 p-4 rounded-lg" style="background: rgba(26, 54, 93, 0.05); border-left: 4px solid ${scoreColor};">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-display font-semibold" style="color: var(--slate-dark);">Documentation Quality</h4>
+                                <span class="font-display font-bold text-xl" style="color: ${scoreColor};">${score}%</span>
+                            </div>
+                            <p class="text-xs mb-2" style="color: var(--slate-medium);">${qs.documentation}</p>
+                            ${qs.missingElements && qs.missingElements.length > 0 ? `
+                                <p class="text-xs" style="color: var(--aidstack-orange);">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>Missing: ${qs.missingElements.join(', ')}
+                                </p>
+                            ` : ''}
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Helper function for confidence badge
+                function getConfidenceBadge(confidence) {
+                    const pct = Math.round(confidence * 100);
+                    let color = '#059669'; // green
+                    let label = 'High';
+                    if (confidence < 0.7) { color = '#F59E0B'; label = 'Medium'; }
+                    if (confidence < 0.4) { color = '#DC2626'; label = 'Low'; }
+                    return `<span class="text-xs px-2 py-1 rounded-full" style="background: ${color}20; color: ${color}; font-weight: 600;">${label} ${pct}%</span>`;
+                }
+
+                // Diagnoses with Confidence & ICD-10
+                const conditions = entries.filter(e => e.resource?.resourceType === 'Condition');
+                if (conditions.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-3" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-stethoscope mr-2"></i>Diagnoses
+                        </h4>
+                        <div class="space-y-2">
+                            ${conditions.map((c, idx) => {
+                                const code = c.resource.code?.text || 'Unknown';
+                                const icd10 = c.resource.code?.coding?.[0]?.code || 'N/A';
+                                const confidence = c.resource.meta?.confidence || 0.5;
+                                const evidence = c.resource.meta?.evidence || '';
+                                return `
+                                    <div class="p-3 rounded-lg border" style="border-color: var(--slate-light); background: white;">
+                                        <div class="flex items-start justify-between mb-1">
+                                            <span class="font-semibold text-sm" style="color: var(--slate-dark);">${code}</span>
+                                            <div class="flex items-center gap-2">
+                                                ${getConfidenceBadge(confidence)}
+                                                <button onclick="openEditModal(${idx})" class="text-xs px-2 py-1 rounded hover:bg-gray-100" style="color: var(--slate-medium);" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button onclick="removeDiagnosis(${idx})" class="text-xs px-2 py-1 rounded hover:bg-gray-100" style="color: #DC2626;" title="Remove">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs" style="color: var(--slate-medium);">
+                                            <span class="font-mono" style="background: var(--slate-bg); padding: 2px 6px; border-radius: 4px;">ICD-10: ${icd10}</span>
+                                        </div>
+                                        ${evidence ? `<p class="text-xs mt-2" style="color: var(--slate-medium);"><i class="fas fa-info-circle mr-1"></i>${evidence}</p>` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Differential Diagnosis
+                if (meta.differentialDiagnosis && meta.differentialDiagnosis.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-3 mt-4" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-list-alt mr-2"></i>Differential Diagnosis
+                        </h4>
+                        <div class="space-y-2">
+                            ${meta.differentialDiagnosis.map(dd => {
+                                const probability = Math.round(dd.probability * 100);
+                                return `
+                                    <div class="p-3 rounded-lg" style="background: rgba(255, 107, 53, 0.05); border-left: 3px solid var(--aidstack-orange);">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-semibold text-sm" style="color: var(--slate-dark);">${dd.condition}</span>
+                                            <span class="text-xs font-semibold" style="color: var(--aidstack-orange);">${probability}%</span>
+                                        </div>
+                                        <div class="text-xs mb-1" style="color: var(--slate-medium);">
+                                            <span class="font-mono" style="background: white; padding: 2px 6px; border-radius: 4px;">ICD-10: ${dd.icd10}</span>
+                                        </div>
+                                        <p class="text-xs" style="color: var(--slate-medium);">${dd.reasoning}</p>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Clinical Decision Support
+                if (meta.clinicalDecisionSupport && meta.clinicalDecisionSupport.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h4 class="font-display font-semibold mb-3 mt-4" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-lightbulb mr-2"></i>Clinical Decision Support
+                        </h4>
+                        <div class="space-y-2">
+                            ${meta.clinicalDecisionSupport.map(cds => {
+                                const priorityColors = {high: '#DC2626', medium: '#F59E0B', low: '#64748B'};
+                                const color = priorityColors[cds.priority] || '#64748B';
+                                return `
+                                    <div class="p-3 rounded-lg flex items-start gap-3" style="background: ${color}10; border-left: 3px solid ${color};">
+                                        <i class="fas fa-info-circle mt-1" style="color: ${color};"></i>
+                                        <div class="flex-1">
+                                            <span class="text-sm" style="color: var(--slate-dark);">${cds.message}</span>
+                                            <span class="text-xs ml-2 px-2 py-0.5 rounded-full" style="background: ${color}20; color: ${color}; text-transform: uppercase; font-weight: 600;">${cds.priority}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
+
+                // Symptoms
                 const symptoms = entries.filter(e => e.resource?.resourceType === 'Observation' &&
                     e.resource.category?.[0]?.text === 'symptom');
                 if (symptoms.length > 0) {
                     const section = document.createElement('div');
                     section.innerHTML = `
-                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Symptoms</h4>
+                        <h4 class="font-display font-semibold mb-2 mt-4" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-heartbeat mr-2"></i>Symptoms
+                        </h4>
                         <ul class="space-y-1">
                             ${symptoms.map(s => `<li class="text-sm">• ${s.resource.code?.text || 'Unknown'}</li>`).join('')}
                         </ul>
@@ -1123,25 +1808,14 @@ Transcription: ${fullTranscription}`
                     container.appendChild(section);
                 }
 
-                // Diagnoses (Conditions)
-                const conditions = entries.filter(e => e.resource?.resourceType === 'Condition');
-                if (conditions.length > 0) {
-                    const section = document.createElement('div');
-                    section.innerHTML = `
-                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Diagnoses</h4>
-                        <ul class="space-y-1">
-                            ${conditions.map(c => `<li class="text-sm">• ${c.resource.code?.text || 'Unknown'}</li>`).join('')}
-                        </ul>
-                    `;
-                    container.appendChild(section);
-                }
-
-                // Medications
+                // Medications & Procedures (collapsed for brevity)
                 const meds = entries.filter(e => e.resource?.resourceType === 'MedicationStatement');
                 if (meds.length > 0) {
                     const section = document.createElement('div');
                     section.innerHTML = `
-                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Medications</h4>
+                        <h4 class="font-display font-semibold mb-2 mt-4" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-pills mr-2"></i>Medications
+                        </h4>
                         <ul class="space-y-1">
                             ${meds.map(m => `<li class="text-sm">• ${m.resource.medicationCodeableConcept?.text || 'Unknown'}</li>`).join('')}
                         </ul>
@@ -1149,12 +1823,13 @@ Transcription: ${fullTranscription}`
                     container.appendChild(section);
                 }
 
-                // Procedures
                 const procs = entries.filter(e => e.resource?.resourceType === 'Procedure');
                 if (procs.length > 0) {
                     const section = document.createElement('div');
                     section.innerHTML = `
-                        <h4 class="font-display font-semibold mb-2" style="color: var(--aidstack-navy);">Procedures</h4>
+                        <h4 class="font-display font-semibold mb-2 mt-4" style="color: var(--aidstack-navy);">
+                            <i class="fas fa-procedures mr-2"></i>Procedures
+                        </h4>
                         <ul class="space-y-1">
                             ${procs.map(p => `<li class="text-sm">• ${p.resource.code?.text || 'Unknown'}</li>`).join('')}
                         </ul>
@@ -1175,9 +1850,14 @@ Transcription: ${fullTranscription}`
 
             let diagnosesHTML = '';
             if (lastPushSummary.diagnoses.length > 0) {
-                diagnosesHTML = lastPushSummary.diagnoses.map(d =>
-                    `<div class="pl-4">• ${d}</div>`
-                ).join('');
+                diagnosesHTML = lastPushSummary.diagnoses.map((d, idx) => {
+                    const confidencePercent = Math.round((d.confidence || 0.8) * 100);
+                    return `<div class="pl-4 mb-2" style="background: #F8FAFC; padding: 8px; border-radius: 6px; border-left: 3px solid var(--aidstack-orange);">
+                        <div style="font-weight: 600; color: var(--slate-dark);">${idx + 1}. ${d.name}</div>
+                        ${d.icd10 ? `<div style="font-size: 12px; color: var(--slate-medium); margin-top: 4px;">ICD-10: <code style="background: white; padding: 2px 6px; border-radius: 3px;">${d.icd10}</code></div>` : ''}
+                        <div style="font-size: 12px; color: var(--slate-medium); margin-top: 4px;">Confidence: ${confidencePercent}%</div>
+                    </div>`;
+                }).join('');
             } else {
                 diagnosesHTML = '<div class="pl-4" style="color: var(--slate-light);">No diagnoses recorded</div>';
             }
@@ -1210,7 +1890,7 @@ Transcription: ${fullTranscription}`
                 </div>
                 <div>
                     <strong style="color: var(--slate-dark);">Clinical Notes:</strong>
-                    ${lastPushSummary.hasNotes ? '<span style="color: green;">✓ Recorded</span>' : '<span style="color: var(--slate-light);">None</span>'}
+                    ${lastPushSummary.hasNotes ? `<span style="color: green;">✓ Recorded (${lastPushSummary.notesLength} characters)</span>` : '<span style="color: var(--slate-light);">None</span>'}
                 </div>
                 <div>
                     <strong style="color: var(--slate-dark);">Symptoms (${lastPushSummary.symptomsCount || 0}):</strong>
@@ -1282,15 +1962,18 @@ Transcription: ${fullTranscription}`
                 });
                 console.log('Encounter created:', encounter);
 
-                // Step 3: Add clinical notes using connector
-                if (fullTranscription) {
-                    await currentConnector.addClinicalNotes(encounter.uuid, fullTranscription, patientUuid);
-                    console.log('Clinical notes added');
-                }
-
-                // Step 4: Add diagnoses and symptoms from FHIR data using connector
+                // Step 3: Parse FHIR data first to build comprehensive notes
+                let fhir = null;
                 const diagnoses = [];
                 const symptoms = [];
+                const medications = [];
+                const procedures = [];
+                let differentialDx = [];
+                let clinicalDecisionSupport = [];
+                let qualityScore = null;
+                let comprehensiveNote = '';
+
+                console.log('📊 lastFHIRData exists:', !!lastFHIRData);
                 if (lastFHIRData) {
                     try {
                         // Extract data from FHIR
@@ -1300,38 +1983,210 @@ Transcription: ${fullTranscription}`
                             jsonStr = codeBlockMatch[1];
                         }
 
-                        const fhir = JSON.parse(jsonStr);
+                        fhir = JSON.parse(jsonStr);
+                        console.log('📋 Parsed FHIR for comprehensive notes:', fhir);
 
-                        // Add diagnoses (Conditions)
+                        // Extract conditions
                         const conditions = fhir.entry?.filter(e => e.resource?.resourceType === 'Condition') || [];
                         for (const condition of conditions) {
                             const diagnosis = condition.resource.code?.text || 'Unknown diagnosis';
-                            diagnoses.push(diagnosis);
-                            await currentConnector.addDiagnosis(encounter.uuid, diagnosis, patientUuid);
-                            console.log('Diagnosis added:', diagnosis);
+                            const icd10 = condition.resource.code?.coding?.[0]?.code;
+                            const confidence = condition.resource.meta?.confidence || 0.8;
+                            const evidence = condition.resource.meta?.evidence;
+                            diagnoses.push({ name: diagnosis, icd10, confidence, evidence });
                         }
 
-                        // Add symptoms (Observations)
-                        // For now, symptoms will be added as clinical notes since connectors don't have addSymptom method
+                        // Extract symptoms
                         const observations = fhir.entry?.filter(e =>
                             e.resource?.resourceType === 'Observation' &&
                             e.resource.category?.[0]?.text === 'symptom'
                         ) || [];
                         for (const obs of observations) {
-                            const symptom = obs.resource.code?.text || 'Unknown symptom';
-                            symptoms.push(symptom);
-                            console.log('Symptom noted:', symptom);
+                            symptoms.push(obs.resource.code?.text || 'Unknown symptom');
                         }
 
-                        // Add symptoms as a note if there are any
-                        if (symptoms.length > 0 && currentConnector.addClinicalNotes) {
-                            const symptomNote = 'Reported symptoms: ' + symptoms.join(', ');
-                            await currentConnector.addClinicalNotes(encounter.uuid, symptomNote, patientUuid);
-                            console.log('Symptoms added as note');
+                        // Extract medications
+                        const medicationStatements = fhir.entry?.filter(e => e.resource?.resourceType === 'MedicationStatement') || [];
+                        for (const med of medicationStatements) {
+                            medications.push(med.resource.medicationCodeableConcept?.text || 'Unknown medication');
+                        }
+
+                        // Extract procedures
+                        const procedureResources = fhir.entry?.filter(e => e.resource?.resourceType === 'Procedure') || [];
+                        for (const proc of procedureResources) {
+                            procedures.push(proc.resource.code?.text || 'Unknown procedure');
+                        }
+
+                        // Extract metadata
+                        if (fhir.meta) {
+                            differentialDx = fhir.meta.differentialDiagnosis || [];
+                            clinicalDecisionSupport = fhir.meta.clinicalDecisionSupport || [];
+                            qualityScore = fhir.meta.qualityScore;
                         }
                     } catch (error) {
-                        console.warn('Error adding diagnoses/symptoms:', error);
+                        console.error('❌ Error parsing FHIR for comprehensive notes:', error);
                     }
+                }
+
+                // Build comprehensive clinical note
+                try {
+                    if (fullTranscription) {
+                        console.log('📝 Building comprehensive clinical notes...');
+
+                        // Strip HTML tags from transcription
+                        const cleanTranscription = fullTranscription.replace(/<[^>]*>/g, '').trim();
+
+                        comprehensiveNote = '';
+                        comprehensiveNote += '================================================================================\n';
+                        comprehensiveNote += '                      CLINICAL ENCOUNTER SUMMARY                              \n';
+                        comprehensiveNote += '================================================================================\n\n';
+
+                        // 1. Chief Complaint / Transcription
+                        comprehensiveNote += '>>> CLINICAL NOTE\n';
+                        comprehensiveNote += '________________________________________________________________________________\n';
+                        comprehensiveNote += cleanTranscription + '\n\n';
+
+                        // 2. Primary Diagnoses
+                        if (diagnoses.length > 0) {
+                            comprehensiveNote += '>>> DIAGNOSES\n';
+                            comprehensiveNote += '________________________________________________________________________________\n';
+                            diagnoses.forEach((dx, idx) => {
+                                const confidencePercent = Math.round(dx.confidence * 100);
+                                let certainty = 'Confirmed';
+                                if (dx.confidence < 0.6) certainty = 'Provisional';
+                                else if (dx.confidence < 0.8) certainty = 'Presumed';
+
+                                comprehensiveNote += `\n${idx + 1}. ${dx.name}`;
+                                if (dx.icd10) comprehensiveNote += ` (ICD-10: ${dx.icd10})`;
+                                comprehensiveNote += `\n   - Certainty: ${certainty} (${confidencePercent}% confidence)`;
+                                if (dx.evidence) {
+                                    comprehensiveNote += `\n   - Evidence: ${dx.evidence}`;
+                                }
+                                comprehensiveNote += '\n';
+                            });
+                            comprehensiveNote += '\n';
+                        }
+
+                        // 3. Symptoms
+                        if (symptoms.length > 0) {
+                            comprehensiveNote += '>>> PRESENTING SYMPTOMS\n';
+                            comprehensiveNote += '________________________________________________________________________________\n\n';
+                            comprehensiveNote += symptoms.map((s, i) => `  ${i + 1}. ${s}`).join('\n');
+                            comprehensiveNote += '\n\n';
+                        }
+
+                        // 4. Differential Diagnoses
+                        if (differentialDx.length > 0) {
+                            comprehensiveNote += '>>> DIFFERENTIAL DIAGNOSES\n';
+                            comprehensiveNote += '________________________________________________________________________________\n';
+                            differentialDx.forEach((ddx, idx) => {
+                                // Support both 'diagnosis' and 'condition' field names
+                                const diagName = ddx.diagnosis || ddx.condition;
+                                if (diagName) {
+                                    comprehensiveNote += `\n${idx + 1}. ${diagName}`;
+                                    if (ddx.icd10) {
+                                        comprehensiveNote += ` (ICD-10: ${ddx.icd10})`;
+                                    }
+                                    comprehensiveNote += ` - ${Math.round((ddx.probability || 0) * 100)}% probability`;
+                                    if (ddx.reasoning) {
+                                        comprehensiveNote += `\n   - Reasoning: ${ddx.reasoning}`;
+                                    }
+                                    comprehensiveNote += '\n';
+                                }
+                            });
+                            comprehensiveNote += '\n';
+                        }
+
+                        // 5. Clinical Decision Support
+                        if (clinicalDecisionSupport.length > 0) {
+                            comprehensiveNote += '>>> CLINICAL RECOMMENDATIONS\n';
+                            comprehensiveNote += '________________________________________________________________________________\n';
+                            clinicalDecisionSupport.forEach((cds, idx) => {
+                                // Support both old format (recommendation/rationale/urgency) and new format (message/priority)
+                                const rec = cds.message || cds.recommendation;
+                                if (rec) {
+                                    comprehensiveNote += `\n${idx + 1}. ${rec}`;
+                                    if (cds.rationale) {
+                                        comprehensiveNote += `\n   - Rationale: ${cds.rationale}`;
+                                    }
+                                    const priority = cds.priority || cds.urgency;
+                                    if (priority) {
+                                        comprehensiveNote += `\n   - Priority: ${priority}`;
+                                    }
+                                    comprehensiveNote += '\n';
+                                }
+                            });
+                            comprehensiveNote += '\n';
+                        }
+
+                        // 6. Medications (if any)
+                        if (medications.length > 0) {
+                            comprehensiveNote += '>>> MEDICATIONS\n';
+                            comprehensiveNote += '________________________________________________________________________________\n\n';
+                            comprehensiveNote += medications.map((m, i) => `  ${i + 1}. ${m}`).join('\n');
+                            comprehensiveNote += '\n\n';
+                        }
+
+                        // 7. Procedures (if any)
+                        if (procedures.length > 0) {
+                            comprehensiveNote += '>>> PROCEDURES\n';
+                            comprehensiveNote += '________________________________________________________________________________\n\n';
+                            comprehensiveNote += procedures.map((p, i) => `  ${i + 1}. ${p}`).join('\n');
+                            comprehensiveNote += '\n\n';
+                        }
+
+                        // 8. Documentation Quality Score
+                        if (qualityScore) {
+                            const scorePercent = Math.round(qualityScore.completeness * 100);
+                            comprehensiveNote += '>>> DOCUMENTATION QUALITY\n';
+                            comprehensiveNote += '________________________________________________________________________________\n\n';
+                            comprehensiveNote += `  Completeness: ${scorePercent}%\n`;
+                            if (qualityScore.missingElements && qualityScore.missingElements.length > 0) {
+                                comprehensiveNote += `  Missing elements: ${qualityScore.missingElements.join(', ')}\n`;
+                            }
+                            comprehensiveNote += '\n';
+                        }
+
+                        comprehensiveNote += '================================================================================\n';
+                        comprehensiveNote += `Generated by Aidstack Medical AI (https://transcriber.aidstack.ai)\n`;
+                        comprehensiveNote += `Date: ${new Date().toLocaleString()}\n`;
+                        comprehensiveNote += '================================================================================\n';
+
+                        console.log('Comprehensive note length:', comprehensiveNote.length);
+                        await currentConnector.addClinicalNotes(encounter.uuid, comprehensiveNote, patientUuid);
+                        console.log('✅ Comprehensive clinical notes added');
+                    } else {
+                        console.log('⚠️ No transcription to add');
+                    }
+                } catch (notesError) {
+                    console.error('❌ Error adding clinical notes:', notesError);
+                    // Continue anyway - don't stop the whole process
+                }
+
+                // Step 4: Add structured diagnoses to OpenMRS
+                if (fhir) {
+                    try {
+                        // Add diagnoses (Conditions) with confidence scores
+                        const conditions = fhir.entry?.filter(e => e.resource?.resourceType === 'Condition') || [];
+                        console.log('🔍 Found', conditions.length, 'conditions to push');
+
+                        for (let i = 0; i < conditions.length; i++) {
+                            const condition = conditions[i];
+                            const diagnosis = condition.resource.code?.text || 'Unknown diagnosis';
+                            const icd10 = condition.resource.code?.coding?.[0]?.code;
+                            const confidence = condition.resource.meta?.confidence || 0.8;
+                            const rank = i + 1; // Primary, secondary, etc.
+
+                            console.log('➡️ Pushing diagnosis:', diagnosis, 'ICD-10:', icd10, 'Confidence:', confidence, 'Rank:', rank);
+                            await currentConnector.addDiagnosis(encounter.uuid, diagnosis, patientUuid, icd10, confidence, rank);
+                            console.log('✅ Diagnosis push complete:', diagnosis);
+                        }
+                    } catch (error) {
+                        console.error('❌ Error adding diagnoses:', error);
+                        console.error('Stack trace:', error.stack);
+                    }
+                } else {
+                    console.log('⚠️ No FHIR data available to push diagnoses');
                 }
 
                 // Build summary for display
@@ -1348,10 +2203,15 @@ Transcription: ${fullTranscription}`
                     location: metadata.location,
                     timestamp: new Date().toLocaleString(),
                     diagnosesCount: diagnoses.length,
-                    diagnoses: diagnoses,
+                    diagnoses: diagnoses.map(d => ({
+                        name: d.name,
+                        icd10: d.icd10,
+                        confidence: d.confidence
+                    })),
                     symptomsCount: symptoms.length,
                     symptoms: symptoms,
-                    hasNotes: !!fullTranscription
+                    hasNotes: !!fullTranscription,
+                    notesLength: fullTranscription ? comprehensiveNote.length : 0
                 };
 
                 updatePushSummary();
@@ -1361,6 +2221,270 @@ Transcription: ${fullTranscription}`
                 console.error('OpenMRS push error:', error);
                 alert('Error pushing to OpenMRS: ' + error.message);
             }
+        }
+
+        // Edit Diagnosis Modal Functions
+        let currentEditIndex = null;
+        let parsedFHIR = null;
+
+        function openEditModal(index = null) {
+            currentEditIndex = index;
+            const modal = document.getElementById('editDiagnosisModal');
+            modal.style.display = 'flex';
+
+            if (index !== null && parsedFHIR) {
+                // Editing existing diagnosis
+                const condition = parsedFHIR.entry.filter(e => e.resource?.resourceType === 'Condition')[index];
+                if (condition) {
+                    document.getElementById('editDiagnosisName').value = condition.resource.code?.text || '';
+                    document.getElementById('editDiagnosisICD10').value = condition.resource.code?.coding?.[0]?.code || '';
+                    const confidence = Math.round((condition.resource.meta?.confidence || 0.8) * 100);
+                    document.getElementById('editDiagnosisConfidence').value = confidence;
+                    document.getElementById('confidenceValue').textContent = confidence + '%';
+                    document.getElementById('editDiagnosisEvidence').value = condition.resource.meta?.evidence || '';
+                }
+            } else {
+                // Adding new diagnosis
+                document.getElementById('editDiagnosisName').value = '';
+                document.getElementById('editDiagnosisICD10').value = '';
+                document.getElementById('editDiagnosisConfidence').value = 80;
+                document.getElementById('confidenceValue').textContent = '80%';
+                document.getElementById('editDiagnosisEvidence').value = '';
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editDiagnosisModal').style.display = 'none';
+            currentEditIndex = null;
+        }
+
+        async function saveDiagnosisEdit() {
+            const name = document.getElementById('editDiagnosisName').value.trim();
+            const icd10 = document.getElementById('editDiagnosisICD10').value.trim();
+            const confidence = parseInt(document.getElementById('editDiagnosisConfidence').value) / 100;
+            const evidence = document.getElementById('editDiagnosisEvidence').value.trim();
+
+            if (!name) {
+                toast.warning('Please enter a diagnosis name');
+                return;
+            }
+
+            if (!parsedFHIR) return;
+
+            // Create or update condition
+            const newCondition = {
+                resource: {
+                    resourceType: "Condition",
+                    clinicalStatus: {text: "active"},
+                    category: [{text: "diagnosis"}],
+                    code: {
+                        text: name,
+                        coding: icd10 ? [{system: "ICD-10", code: icd10, display: name}] : []
+                    },
+                    meta: {
+                        confidence: confidence,
+                        evidence: evidence
+                    }
+                }
+            };
+
+            const conditions = parsedFHIR.entry.filter(e => e.resource?.resourceType === 'Condition');
+
+            if (currentEditIndex !== null && currentEditIndex < conditions.length) {
+                // Update existing
+                const conditionIndex = parsedFHIR.entry.findIndex(e =>
+                    e.resource?.resourceType === 'Condition' &&
+                    parsedFHIR.entry.filter(e2 => e2.resource?.resourceType === 'Condition').indexOf(e) === currentEditIndex
+                );
+                parsedFHIR.entry[conditionIndex] = newCondition;
+                toast.success('Diagnosis updated');
+            } else {
+                // Add new
+                parsedFHIR.entry.push(newCondition);
+                toast.success('Diagnosis added');
+            }
+
+            // Update display and FHIR JSON
+            lastFHIRData = JSON.stringify(parsedFHIR, null, 2);
+            document.getElementById('rawJsonPayload').textContent = lastFHIRData;
+            displayFHIRData(lastFHIRData);
+
+            closeEditModal();
+        }
+
+        function removeDiagnosis(index) {
+            if (!parsedFHIR) return;
+            if (!confirm('Remove this diagnosis?')) return;
+
+            const conditions = parsedFHIR.entry.filter(e => e.resource?.resourceType === 'Condition');
+            const conditionToRemove = conditions[index];
+
+            parsedFHIR.entry = parsedFHIR.entry.filter(e => e !== conditionToRemove);
+
+            // Update display
+            lastFHIRData = JSON.stringify(parsedFHIR, null, 2);
+            document.getElementById('rawJsonPayload').textContent = lastFHIRData;
+            displayFHIRData(lastFHIRData);
+
+            toast.success('Diagnosis removed');
+        }
+
+        // Connector Settings Functions
+        let currentSettingsConnectorId = null;
+
+        function openConnectorSettings(connectorId) {
+            currentSettingsConnectorId = connectorId;
+            const connector = availableConnectors.find(c => c.id === connectorId);
+            if (!connector) return;
+
+            document.getElementById('settingsConnectorName').textContent = `${connector.name} Settings`;
+            const fieldsContainer = document.getElementById('connectorSettingsFields');
+
+            // Define settings schema for each connector
+            const settingsSchemas = {
+                'openmrs': [
+                    {
+                        key: 'baseUrl',
+                        label: 'OpenMRS Base URL',
+                        type: 'text',
+                        default: 'https://dev3.openmrs.org/openmrs',
+                        placeholder: 'https://your-openmrs-server.com/openmrs',
+                        help: 'The base URL of your OpenMRS instance'
+                    },
+                    {
+                        key: 'username',
+                        label: 'Username',
+                        type: 'text',
+                        default: 'admin',
+                        placeholder: 'admin',
+                        help: 'Your OpenMRS username'
+                    },
+                    {
+                        key: 'password',
+                        label: 'Password',
+                        type: 'password',
+                        default: 'Admin123',
+                        placeholder: '••••••••',
+                        help: 'Your OpenMRS password'
+                    },
+                    {
+                        key: 'encounterTypeUUID',
+                        label: 'Encounter Type UUID',
+                        type: 'text',
+                        default: 'd7151f82-c1f3-4152-a605-2f9ea7414a79',
+                        placeholder: 'd7151f82-c1f3-4152-a605-2f9ea7414a79',
+                        help: 'UUID for "Visit Note" encounter type (common in OpenMRS demo)'
+                    },
+                    {
+                        key: 'visitTypeUUID',
+                        label: 'Visit Type UUID',
+                        type: 'text',
+                        default: '7b0f5697-27e3-40c4-8bae-f4049abfb4ed',
+                        placeholder: '7b0f5697-27e3-40c4-8bae-f4049abfb4ed',
+                        help: 'UUID for "Facility Visit" type (common in OpenMRS demo)'
+                    },
+                    {
+                        key: 'locationUUID',
+                        label: 'Location UUID',
+                        type: 'text',
+                        default: '8d6c993e-c2cc-11de-8d13-0010c6dffd0f',
+                        placeholder: '8d6c993e-c2cc-11de-8d13-0010c6dffd0f',
+                        help: 'UUID for location (common in OpenMRS demo: Unknown Location)'
+                    },
+                    {
+                        key: 'clinicalNotesConceptUUID',
+                        label: 'Clinical Notes Concept UUID',
+                        type: 'text',
+                        default: '162169AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                        placeholder: '162169AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                        help: 'UUID for "Text of encounter note" concept (leave blank to auto-search)'
+                    },
+                    {
+                        key: 'useProxy',
+                        label: 'Use Local Proxy',
+                        type: 'checkbox',
+                        default: true,
+                        help: 'Use local server proxy to avoid CORS issues'
+                    }
+                ]
+            };
+
+            const schema = settingsSchemas[connectorId] || [];
+            const currentConfig = connector.config || {};
+
+            fieldsContainer.innerHTML = schema.map(field => {
+                const value = currentConfig[field.key] !== undefined ? currentConfig[field.key] : field.default;
+
+                if (field.type === 'checkbox') {
+                    return `
+                        <div>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting_${field.key}" ${value ? 'checked' : ''} class="mr-3">
+                                <div>
+                                    <span class="block text-sm font-display font-medium" style="color: var(--slate-dark);">${field.label}</span>
+                                    <span class="block text-xs" style="color: var(--slate-medium);">${field.help}</span>
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div>
+                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">${field.label}</label>
+                            <input type="${field.type}" id="setting_${field.key}" value="${value || ''}" placeholder="${field.placeholder}" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--slate-light);">
+                            <p class="text-xs mt-1" style="color: var(--slate-medium);">${field.help}</p>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            document.getElementById('connectorSettingsModal').style.display = 'flex';
+        }
+
+        function closeConnectorSettings() {
+            document.getElementById('connectorSettingsModal').style.display = 'none';
+            currentSettingsConnectorId = null;
+        }
+
+        function saveConnectorSettings() {
+            if (!currentSettingsConnectorId) return;
+
+            const connector = availableConnectors.find(c => c.id === currentSettingsConnectorId);
+            if (!connector) return;
+
+            // Get all setting fields
+            const settingInputs = document.querySelectorAll('[id^="setting_"]');
+            const newConfig = {};
+
+            settingInputs.forEach(input => {
+                const key = input.id.replace('setting_', '');
+                if (input.type === 'checkbox') {
+                    newConfig[key] = input.checked;
+                } else {
+                    newConfig[key] = input.value || undefined;
+                }
+            });
+
+            // Update connector config
+            connector.config = { ...connector.config, ...newConfig };
+
+            // Save to localStorage
+            try {
+                const savedConfigs = JSON.parse(localStorage.getItem('connectorConfigs') || '{}');
+                savedConfigs[currentSettingsConnectorId] = newConfig;
+                localStorage.setItem('connectorConfigs', JSON.stringify(savedConfigs));
+
+                toast.success('Settings saved! Reload to apply changes.');
+                closeConnectorSettings();
+            } catch (error) {
+                toast.error('Failed to save settings');
+                console.error('Settings save error:', error);
+            }
+        }
+
+        async function regenerateAIAnalysis() {
+            if (!confirm('Re-run AI analysis? This will replace current data.')) return;
+            await processAndReview();
         }
     </script>
 </body>

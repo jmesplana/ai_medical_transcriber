@@ -187,7 +187,7 @@
                     Made Simple
                 </h1>
                 <p class="text-xl text-slate-medium mb-8 leading-relaxed">
-                    Transform clinical conversations into structured FHIR-compliant data instantly. Save hours on documentation and focus on what matters—patient care.
+                    Transform clinical conversations into structured FHIR-compliant data with automatic ICD-10 coding. Generate comprehensive encounter notes and push directly to your EHR—all in seconds.
                 </p>
                 <div class="flex flex-wrap gap-4">
                     <a href="/src/index.html" class="btn-primary">
@@ -202,15 +202,15 @@
                 <div class="flex items-center gap-8 mt-12 pt-8 border-t border-slate-200">
                     <div>
                         <div class="text-3xl font-bold gradient-text">95%</div>
-                        <div class="text-sm text-slate-medium">Time Saved</div>
+                        <div class="text-sm text-slate-medium">Accuracy</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold gradient-text">FHIR</div>
+                        <div class="text-3xl font-bold gradient-text">ICD-10</div>
+                        <div class="text-sm text-slate-medium">Auto-coded</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold gradient-text">FHIR R4</div>
                         <div class="text-sm text-slate-medium">Compliant</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-bold gradient-text">Real-time</div>
-                        <div class="text-sm text-slate-medium">Processing</div>
                     </div>
                 </div>
             </div>
@@ -227,15 +227,16 @@
                         <div class="space-y-3">
                             <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
                                 <div class="text-xs text-slate-medium mb-1">Symptoms</div>
-                                <div class="text-sm">• Headache • Fever • Nausea</div>
+                                <div class="text-sm">• Polyuria • Polydipsia • Fatigue</div>
                             </div>
                             <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
                                 <div class="text-xs text-slate-medium mb-1">Diagnosis</div>
-                                <div class="text-sm">Viral Syndrome</div>
+                                <div class="text-sm font-semibold">Type 2 Diabetes Mellitus</div>
+                                <div class="text-xs text-slate-medium mt-1">ICD-10: <code style="background: white; padding: 1px 4px; border-radius: 3px;">E11.9</code> • 95% confidence</div>
                             </div>
                             <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
-                                <div class="text-xs text-slate-medium mb-1">Medications</div>
-                                <div class="text-sm">• Ibuprofen 400mg • Ondansetron 4mg</div>
+                                <div class="text-xs text-slate-medium mb-1">Clinical Notes</div>
+                                <div class="text-sm">Comprehensive encounter summary generated</div>
                             </div>
                         </div>
                         <div class="mt-6 flex items-center justify-between">
@@ -246,6 +247,27 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Highlights Section -->
+    <section class="max-w-7xl mx-auto px-6 py-12">
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="text-center p-8 rounded-2xl" style="background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(26, 54, 93, 0.1) 100%);">
+                <div class="text-4xl mb-3">🏥</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Smart ICD-10 Mapping</h3>
+                <p class="text-sm text-slate-medium">Automatically matches diagnoses to precise ICD-10 codes using WHO standards</p>
+            </div>
+            <div class="text-center p-8 rounded-2xl" style="background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, rgba(255, 107, 53, 0.1) 100%);">
+                <div class="text-4xl mb-3">📋</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Comprehensive Notes</h3>
+                <p class="text-sm text-slate-medium">Structured clinical summaries with diagnoses, symptoms, and recommendations</p>
+            </div>
+            <div class="text-center p-8 rounded-2xl" style="background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(26, 54, 93, 0.1) 100%);">
+                <div class="text-4xl mb-3">⚙️</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Fully Customizable</h3>
+                <p class="text-sm text-slate-medium">Configure all EHR settings, UUIDs, and connection parameters via UI</p>
             </div>
         </div>
     </section>
@@ -288,27 +310,27 @@
                 <div class="feature-icon icon-navy">
                     <i class="fas fa-brain"></i>
                 </div>
-                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">AI-Powered Extraction</h3>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">ICD-10 Code Mapping</h3>
                 <p class="text-slate-medium leading-relaxed">
-                    GPT-4 intelligently identifies symptoms, diagnoses, medications, and procedures from natural conversation.
+                    Automatically maps diagnoses to accurate ICD-10 codes using intelligent code search and WHO terminology standards.
                 </p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon icon-orange">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-file-alt"></i>
                 </div>
-                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">Real-Time Processing</h3>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">Comprehensive Notes</h3>
                 <p class="text-slate-medium leading-relaxed">
-                    See structured data appear in real-time as you speak. Review, edit, and save instantly to your EHR.
+                    Generates structured clinical encounter summaries with diagnoses, symptoms, differentials, and recommendations.
                 </p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon icon-navy">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-cog"></i>
                 </div>
-                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">HIPAA-Ready</h3>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">Fully Configurable</h3>
                 <p class="text-slate-medium leading-relaxed">
-                    Built with security and privacy in mind. Demo mode runs entirely in your browser—no data leaves your device.
+                    Customize EHR connection settings, encounter types, locations, and concept UUIDs through an intuitive UI.
                 </p>
             </div>
         </div>
@@ -333,13 +355,13 @@
             </div>
             <div class="text-center">
                 <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">3</div>
-                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Review Data</h3>
-                <p class="text-slate-medium">AI extracts structured FHIR data automatically</p>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Review & Edit</h3>
+                <p class="text-slate-medium">AI extracts FHIR data with ICD-10 codes and confidence scores</p>
             </div>
             <div class="text-center">
                 <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">4</div>
                 <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Save to EHR</h3>
-                <p class="text-slate-medium">Push visit notes and data to your EHR system</p>
+                <p class="text-slate-medium">Push comprehensive notes, diagnoses, and ICD-10 codes to EHR</p>
             </div>
         </div>
     </section>
@@ -352,8 +374,8 @@
         </div>
         <div class="grid md:grid-cols-4 gap-8 items-center">
             <div class="feature-card text-center">
-                <div class="mb-4 flex justify-center">
-                    <img src="https://openmrs.org/wp-content/uploads/2023/08/openmrs-logo-color.svg" alt="OpenMRS" style="height: 48px;">
+                <div class="mb-4 flex justify-center items-center" style="height: 48px;">
+                    <div class="font-display font-bold text-2xl" style="color: #f26522;">OpenMRS</div>
                 </div>
                 <h3 class="font-semibold">OpenMRS</h3>
                 <p class="text-sm text-slate-medium mt-2">Full integration</p>
