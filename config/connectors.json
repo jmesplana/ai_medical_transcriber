@@ -1,0 +1,32 @@
+{
+  "connectors": [
+    {
+      "id": "demo",
+      "name": "Demo Mode",
+      "description": "Try the app without connecting to a real EHR. All data is stored in browser memory only.",
+      "icon": "🎭",
+      "enabled": true,
+      "requiresAuth": false,
+      "class": "DemoConnector",
+      "file": "demo-connector.js"
+    },
+    {
+      "id": "openmrs",
+      "name": "OpenMRS",
+      "description": "Connect to an OpenMRS EHR instance",
+      "icon": "🏥",
+      "enabled": true,
+      "requiresAuth": true,
+      "class": "OpenMRSConnector",
+      "file": "openmrs-connector.js",
+      "config": {
+        "baseUrl": "https://dev3.openmrs.org/openmrs",
+        "username": "admin",
+        "password": "Admin123",
+        "useProxy": true,
+        "proxyPath": "/openmrs-proxy"
+      }
+    }
+  ],
+  "default": "demo"
+}

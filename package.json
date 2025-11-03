@@ -1,0 +1,14 @@
+{
+  "name": "aidstack-medical-ai",
+  "version": "2.0.0",
+  "description": "FHIR-compliant clinical transcription with pluggable EHR connectors",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "old": "node proxy-server.js"
+  },
+  "keywords": ["medical", "transcription", "FHIR", "OpenMRS", "AI", "EHR", "connectors"],
+  "author": "Aidstack",
+  "license": "MIT"
+}

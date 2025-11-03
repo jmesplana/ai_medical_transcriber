@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aidstack Transcriber | Clinical Voice Transcription</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --aidstack-navy: #1A365D;
+            --aidstack-orange: #FF6B35;
+            --slate-dark: #0F172A;
+            --slate-medium: #475569;
+            --slate-light: #94A3B8;
+            --slate-bg: #F8FAFC;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--slate-bg) 0%, #ffffff 100%);
+            color: var(--slate-dark);
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--aidstack-navy) 0%, var(--aidstack-orange) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-primary {
+            background: var(--aidstack-orange);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #E55A2B;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--aidstack-navy);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border: 2px solid var(--aidstack-navy);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--aidstack-navy);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .icon-orange {
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--aidstack-orange);
+        }
+
+        .icon-navy {
+            background: rgba(26, 54, 93, 0.1);
+            color: var(--aidstack-navy);
+        }
+
+        .hero-image {
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+        }
+
+        .stats-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--aidstack-orange);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div>
+                        <div class="font-display font-bold text-xl">
+                            <span style="color: var(--aidstack-orange);">Aidstack</span> <span style="color: var(--aidstack-navy);">Transcriber</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#features" class="text-slate-medium hover:text-aidstack-navy transition">Features</a>
+                    <a href="#how-it-works" class="text-slate-medium hover:text-aidstack-navy transition">How It Works</a>
+                    <a href="#integrations" class="text-slate-medium hover:text-aidstack-navy transition">Integrations</a>
+                    <a href="/src/index.html" class="btn-primary">Try Demo</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="max-w-7xl mx-auto px-6 py-20 md:py-32">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <div class="inline-block bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+                    ⚡ Powered by AI
+                </div>
+                <h1 class="font-display text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                    Clinical Voice
+                    <span class="gradient-text">Transcription</span>
+                    Made Simple
+                </h1>
+                <p class="text-xl text-slate-medium mb-8 leading-relaxed">
+                    Transform clinical conversations into structured FHIR-compliant data instantly. Save hours on documentation and focus on what matters—patient care.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="/src/index.html" class="btn-primary">
+                        <i class="fas fa-play"></i>
+                        Try Demo
+                    </a>
+                    <a href="#how-it-works" class="btn-secondary">
+                        <i class="fas fa-book"></i>
+                        Learn More
+                    </a>
+                </div>
+                <div class="flex items-center gap-8 mt-12 pt-8 border-t border-slate-200">
+                    <div>
+                        <div class="text-3xl font-bold gradient-text">95%</div>
+                        <div class="text-sm text-slate-medium">Time Saved</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold gradient-text">FHIR</div>
+                        <div class="text-sm text-slate-medium">Compliant</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold gradient-text">Real-time</div>
+                        <div class="text-sm text-slate-medium">Processing</div>
+                    </div>
+                </div>
+            </div>
+            <div class="float-animation">
+                <div class="hero-image" style="background: linear-gradient(135deg, var(--aidstack-navy) 0%, var(--aidstack-orange) 100%); padding: 40px;">
+                    <div style="background: white; border-radius: 16px; padding: 32px;">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 rounded-full" style="background: var(--aidstack-orange);"></div>
+                            <div>
+                                <div class="font-semibold">Dr. Sarah Johnson</div>
+                                <div class="text-sm text-slate-medium">Recording visit note</div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
+                                <div class="text-xs text-slate-medium mb-1">Symptoms</div>
+                                <div class="text-sm">• Headache • Fever • Nausea</div>
+                            </div>
+                            <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
+                                <div class="text-xs text-slate-medium mb-1">Diagnosis</div>
+                                <div class="text-sm">Viral Syndrome</div>
+                            </div>
+                            <div style="background: var(--slate-bg); padding: 12px; border-radius: 8px;">
+                                <div class="text-xs text-slate-medium mb-1">Medications</div>
+                                <div class="text-sm">• Ibuprofen 400mg • Ondansetron 4mg</div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between">
+                            <div class="text-xs text-slate-medium">✓ FHIR Validated</div>
+                            <button style="background: var(--aidstack-orange); color: white; padding: 8px 16px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600;">
+                                Save to EHR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="max-w-7xl mx-auto px-6 py-20">
+        <div class="text-center mb-16">
+            <h2 class="font-display text-4xl font-bold mb-4">Why Clinicians Love It</h2>
+            <p class="text-xl text-slate-medium">Built for healthcare professionals, powered by cutting-edge AI</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="feature-card">
+                <div class="feature-icon icon-orange">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">Voice-First Design</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    Simply speak naturally. Our AI understands medical terminology and captures clinical context accurately.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-navy">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">FHIR-Compliant</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    Automatically structures data into FHIR resources—Conditions, Observations, MedicationStatements, and more.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-orange">
+                    <i class="fas fa-plug"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">EHR Integration</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    Connect to OpenMRS, Epic, Cerner, or any FHIR-compatible EHR. Or try our demo mode with no login required.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-navy">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">AI-Powered Extraction</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    GPT-4 intelligently identifies symptoms, diagnoses, medications, and procedures from natural conversation.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-orange">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">Real-Time Processing</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    See structured data appear in real-time as you speak. Review, edit, and save instantly to your EHR.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-navy">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold mb-3" style="color: var(--aidstack-navy);">HIPAA-Ready</h3>
+                <p class="text-slate-medium leading-relaxed">
+                    Built with security and privacy in mind. Demo mode runs entirely in your browser—no data leaves your device.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="max-w-7xl mx-auto px-6 py-20" style="background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(255, 107, 53, 0.05) 100%); border-radius: 32px;">
+        <div class="text-center mb-16">
+            <h2 class="font-display text-4xl font-bold mb-4">How It Works</h2>
+            <p class="text-xl text-slate-medium">Four simple steps from voice to EHR</p>
+        </div>
+        <div class="grid md:grid-cols-4 gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">1</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Select Patient</h3>
+                <p class="text-slate-medium">Search existing patients or create new records</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">2</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Record Visit</h3>
+                <p class="text-slate-medium">Speak naturally about the clinical encounter</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">3</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Review Data</h3>
+                <p class="text-slate-medium">AI extracts structured FHIR data automatically</p>
+            </div>
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style="background: var(--aidstack-orange); color: white;">4</div>
+                <h3 class="font-display text-xl font-semibold mb-2" style="color: var(--aidstack-navy);">Save to EHR</h3>
+                <p class="text-slate-medium">Push visit notes and data to your EHR system</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations -->
+    <section id="integrations" class="max-w-7xl mx-auto px-6 py-20">
+        <div class="text-center mb-16">
+            <h2 class="font-display text-4xl font-bold mb-4">Integrates With Your Workflow</h2>
+            <p class="text-xl text-slate-medium">Works with leading EHR systems</p>
+        </div>
+        <div class="grid md:grid-cols-4 gap-8 items-center">
+            <div class="feature-card text-center">
+                <div class="mb-4 flex justify-center">
+                    <img src="https://openmrs.org/wp-content/uploads/2023/08/openmrs-logo-color.svg" alt="OpenMRS" style="height: 48px;">
+                </div>
+                <h3 class="font-semibold">OpenMRS</h3>
+                <p class="text-sm text-slate-medium mt-2">Full integration</p>
+            </div>
+            <div class="feature-card text-center">
+                <div class="text-4xl mb-4">🔥</div>
+                <h3 class="font-semibold">FHIR R4</h3>
+                <p class="text-sm text-slate-medium mt-2">Generic connector</p>
+            </div>
+            <div class="feature-card text-center">
+                <div class="text-4xl mb-4">🚀</div>
+                <h3 class="font-semibold">Demo Mode</h3>
+                <p class="text-sm text-slate-medium mt-2">Try without EHR</p>
+            </div>
+            <div class="feature-card text-center">
+                <div class="text-4xl mb-4">➕</div>
+                <h3 class="font-semibold">More Soon</h3>
+                <p class="text-sm text-slate-medium mt-2">Epic, Cerner, etc</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="max-w-7xl mx-auto px-6 py-20">
+        <div class="text-center p-16 rounded-3xl" style="background: linear-gradient(135deg, var(--aidstack-navy) 0%, var(--aidstack-orange) 100%);">
+            <h2 class="font-display text-4xl md:text-5xl font-bold text-white mb-6">
+                Ready to Transform Your Documentation?
+            </h2>
+            <p class="text-xl text-white opacity-90 mb-8 max-w-2xl mx-auto">
+                Try our demo with no login required. See how AI can save hours on clinical documentation.
+            </p>
+            <div class="flex flex-wrap gap-4 justify-center">
+                <a href="/src/index.html" class="btn-primary" style="background: white; color: var(--aidstack-navy);">
+                    <i class="fas fa-play"></i>
+                    Try Demo Now
+                </a>
+                <a href="mailto:hello@aidstack.ai" class="btn-secondary" style="background: transparent; color: white; border-color: white;">
+                    <i class="fas fa-envelope"></i>
+                    Contact Sales
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 mt-20">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div>
+                            <div class="font-display font-bold text-xl">
+                                <span style="color: var(--aidstack-orange);">Aidstack</span> <span style="color: var(--aidstack-navy);">Transcriber</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-medium">
+                        Empowering healthcare with AI-powered clinical documentation.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4" style="color: var(--aidstack-navy);">Product</h4>
+                    <ul class="space-y-2 text-sm text-slate-medium">
+                        <li><a href="#features" class="hover:text-aidstack-orange transition">Features</a></li>
+                        <li><a href="/src/index.html" class="hover:text-aidstack-orange transition">Demo</a></li>
+                        <li><a href="#integrations" class="hover:text-aidstack-orange transition">Integrations</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4" style="color: var(--aidstack-navy);">Company</h4>
+                    <ul class="space-y-2 text-sm text-slate-medium">
+                        <li><a href="https://aidstack.ai" class="hover:text-aidstack-orange transition">About</a></li>
+                        <li><a href="mailto:hello@aidstack.ai" class="hover:text-aidstack-orange transition">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4" style="color: var(--aidstack-navy);">Legal</h4>
+                    <ul class="space-y-2 text-sm text-slate-medium">
+                        <li><a href="#" class="hover:text-aidstack-orange transition">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-aidstack-orange transition">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-aidstack-orange transition">HIPAA Compliance</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-slate-200 mt-12 pt-8 text-center text-sm text-slate-medium">
+                <p>&copy; 2025 Aidstack. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

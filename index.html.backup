@@ -752,32 +752,23 @@
     recommendationsList.innerHTML = '';
     explanationText.innerHTML = '';
 
-    console.log('Raw AI response:', data);
-
     // Attempt to extract JSON from the response
     let jsonData = '';
     let explanation = '';
-
+    
     try {
-        // Try to find JSON in markdown code blocks first
-        const codeBlockMatch = data.match(/```json\s*([\s\S]*?)\s*```/);
-        if (codeBlockMatch) {
-            jsonData = codeBlockMatch[1];
+        // Find the first occurrence of a valid JSON object
+        const jsonStart = data.indexOf('{');
+        const jsonEnd = data.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            jsonData = data.substring(jsonStart, jsonEnd + 1);
+            explanation = data.substring(jsonEnd + 1).trim();
         } else {
-            // Find the first occurrence of a valid JSON object
-            const jsonStart = data.indexOf('{');
-            const jsonEnd = data.lastIndexOf('}');
-
-            if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-                jsonData = data.substring(jsonStart, jsonEnd + 1);
-                explanation = data.substring(jsonEnd + 1).trim();
-            } else {
-                throw new Error('No valid JSON found in the response');
-            }
+            throw new Error('No valid JSON found in the response');
         }
 
         // Parse the JSON data
-        console.log('Extracted JSON:', jsonData);
         const fhirData = JSON.parse(jsonData);
 
         // Helper function to safely access nested properties
