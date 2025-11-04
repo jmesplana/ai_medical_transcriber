@@ -306,62 +306,18 @@
                     </div>
                 </div>
 
-                <!-- Patient Mode Toggle (for real EHRs) -->
-                <div id="patientModeToggle" class="mb-6">
-                    <div class="flex gap-4">
-                        <label class="flex items-center cursor-pointer px-6 py-3 border-2 rounded-lg transition-all" style="border-color: var(--aidstack-navy); background: rgba(26, 54, 93, 0.05);">
-                            <input type="radio" name="patientMode" value="new" class="mr-3" checked>
-                            <span class="font-display font-medium" style="color: var(--slate-dark);">New Patient</span>
-                        </label>
-                        <label class="flex items-center cursor-pointer px-6 py-3 border-2 rounded-lg transition-all" style="border-color: var(--slate-light);">
-                            <input type="radio" name="patientMode" value="existing" class="mr-3">
-                            <span class="font-display font-medium" style="color: var(--slate-dark);">Existing Patient</span>
-                        </label>
+                <!-- Patient Search (for real EHRs) -->
+                <div id="patientSearchSection">
+                    <div class="mb-4 p-4 rounded-lg" style="background: rgba(26, 54, 93, 0.05); border-left: 4px solid var(--aidstack-navy);">
+                        <p style="color: var(--slate-dark);">
+                            <i class="fas fa-info-circle mr-2" style="color: var(--aidstack-navy);"></i>
+                            <strong>Note:</strong> Please create the patient in OpenMRS first, then search for them here.
+                        </p>
                     </div>
-                </div>
-
-                <!-- New Patient Form -->
-                <div id="newPatientForm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Given Name <span style="color: var(--aidstack-orange);">*</span></label>
-                            <input type="text" id="patientGivenName" placeholder="John" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Family Name <span style="color: var(--aidstack-orange);">*</span></label>
-                            <input type="text" id="patientFamilyName" placeholder="Doe" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Gender <span style="color: var(--aidstack-orange);">*</span></label>
-                            <select id="patientGender" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                                <option value="">Select...</option>
-                                <option value="M">Male</option>
-                                <option value="F">Female</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Birth Date <span style="color: var(--aidstack-orange);">*</span></label>
-                            <input type="date" id="patientBirthdate" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">ID Type <span style="color: var(--aidstack-orange);">*</span></label>
-                            <select id="patientIdentifierType" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-display font-medium mb-2" style="color: var(--slate-dark);">Patient ID <span style="color: var(--aidstack-orange);">*</span></label>
-                            <input type="text" id="patientIdentifier" placeholder="MRN-12345" class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Existing Patient Search -->
-                <div id="existingPatientForm" style="display: none;">
                     <div class="mb-2">
                         <input type="text" id="patientSearch" placeholder="Type to search by name or ID..." class="w-full px-4 py-3 border rounded-lg" style="border-color: var(--slate-light);">
                         <p class="text-xs mt-2" style="color: var(--slate-medium);">
-                            <i class="fas fa-info-circle mr-1"></i>Results appear as you type (minimum 2 characters)
+                            <i class="fas fa-search mr-1"></i>Results appear as you type (minimum 2 characters)
                         </p>
                     </div>
                     <div id="searchResults" class="mt-4"></div>
@@ -771,28 +727,19 @@
 
         function updatePatientFormUI() {
             const demoSelection = document.getElementById('demoPatientSelection');
-            const patientModeToggle = document.getElementById('patientModeToggle');
-            const newPatientForm = document.getElementById('newPatientForm');
-            const existingPatientForm = document.getElementById('existingPatientForm');
+            const patientSearchSection = document.getElementById('patientSearchSection');
 
             if (currentConnector && currentConnector.isDemo) {
                 // Demo Mode: Show quick patient picker
                 demoSelection.style.display = 'block';
-                patientModeToggle.style.display = 'none';
-                newPatientForm.style.display = 'none';
-                existingPatientForm.style.display = 'none';
+                patientSearchSection.style.display = 'none';
 
                 // Load demo patients
                 loadDemoPatients();
             } else {
-                // Real EHR: Show normal forms
+                // Real EHR: Show patient search
                 demoSelection.style.display = 'none';
-                patientModeToggle.style.display = 'block';
-
-                // Show appropriate form based on mode
-                const mode = document.querySelector('input[name="patientMode"]:checked')?.value || 'new';
-                newPatientForm.style.display = mode === 'new' ? 'block' : 'none';
-                existingPatientForm.style.display = mode === 'existing' ? 'block' : 'none';
+                patientSearchSection.style.display = 'block';
             }
         }
 
@@ -916,14 +863,7 @@
                     btn.disabled = false;
                 }
             });
-            // Patient mode toggle
-            document.querySelectorAll('input[name="patientMode"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const isNew = e.target.value === 'new';
-                    document.getElementById('newPatientForm').style.display = isNew ? 'block' : 'none';
-                    document.getElementById('existingPatientForm').style.display = isNew ? 'none' : 'block';
-                });
-            });
+            // Patient mode toggle removed - now only search mode
 
             // Navigation buttons
             document.getElementById('continueToRecordBtn').addEventListener('click', () => goToStep(2));
@@ -1137,27 +1077,7 @@
         }
 
         async function loadIdentifierTypes() {
-            try {
-                const auth = btoa(`${OPENMRS_USERNAME}:${OPENMRS_PASSWORD}`);
-                const response = await fetch('/openmrs-proxy/ws/rest/v1/patientidentifiertype', {
-                    headers: { 'Authorization': `Basic ${auth}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const select = document.getElementById('patientIdentifierType');
-                    select.innerHTML = '<option value="">Select ID Type...</option>';
-
-                    data.results.forEach(type => {
-                        const option = document.createElement('option');
-                        option.value = type.uuid;
-                        option.textContent = type.display;
-                        select.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading identifier types:', error);
-            }
+            // Identifier types loading removed - no longer creating patients in app
         }
 
         async function loadEncounterTypes() {
@@ -1953,30 +1873,13 @@ Transcription: ${fullTranscription}`
                     patient = selectedPatient;
                     patientUuid = selectedPatient.uuid;
                 } else {
-                    // Real EHR: Check mode
-                    const patientMode = document.querySelector('input[name="patientMode"]:checked').value;
-
-                    if (patientMode === 'existing') {
-                        if (!selectedPatient) {
-                            alert('Please select a patient');
-                            return;
-                        }
-                        patient = selectedPatient;
-                        patientUuid = selectedPatient.uuid;
-                    } else {
-                    // Create new patient using connector
-                    const patientData = {
-                        givenName: document.getElementById('patientGivenName').value,
-                        familyName: document.getElementById('patientFamilyName').value,
-                        gender: document.getElementById('patientGender').value,
-                        birthdate: document.getElementById('patientBirthdate').value,
-                        identifier: document.getElementById('patientIdentifier').value,
-                        identifierType: document.getElementById('patientIdentifierType')?.value
-                    };
-
-                        patient = await currentConnector.createPatient(patientData);
-                        patientUuid = patient.uuid;
+                    // Real EHR: Must have selected patient
+                    if (!selectedPatient) {
+                        alert('Please search for and select a patient first');
+                        return;
                     }
+                    patient = selectedPatient;
+                    patientUuid = selectedPatient.uuid;
                 }
 
                 // Step 1: Get or create visit using connector

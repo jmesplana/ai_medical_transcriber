@@ -78,6 +78,51 @@ class OpenMRSConnector extends BaseConnector {
             }
         }
 
+        // Get identifier - either from user or generate via IDGen
+        let identifier = patientData.identifier;
+
+        if (!identifier) {
+            // Try to auto-generate using IDGen module
+            try {
+                console.log('🔄 Attempting to auto-generate identifier via IDGen...');
+                const autoGenUrl = this._buildUrl(`/ws/rest/v1/idgen/autogenerationoption?identifierType=${identifierTypeUuid}`);
+                const autoGenResponse = await this._fetch(autoGenUrl);
+
+                if (autoGenResponse.ok) {
+                    const autoGenData = await autoGenResponse.json();
+                    if (autoGenData.results && autoGenData.results.length > 0) {
+                        const sourceUuid = autoGenData.results[0].source?.uuid;
+                        if (sourceUuid) {
+                            console.log('📋 Found identifier source:', sourceUuid);
+                            // Generate identifier from the source
+                            const genUrl = this._buildUrl(`/ws/rest/v1/idgen/identifiersource/${sourceUuid}/identifier`);
+                            const genResponse = await this._fetch(genUrl, { method: 'POST', body: '{}' });
+                            if (genResponse.ok) {
+                                const genData = await genResponse.json();
+                                identifier = genData.identifier;
+                                console.log('✅ Auto-generated identifier from IDGen:', identifier);
+                            } else {
+                                console.warn('⚠️ Failed to generate identifier:', await genResponse.text());
+                            }
+                        } else {
+                            console.warn('⚠️ No identifier source found in auto-generation options');
+                        }
+                    } else {
+                        console.warn('⚠️ No auto-generation options configured for this identifier type');
+                    }
+                } else {
+                    console.warn('⚠️ Could not fetch auto-generation options:', await autoGenResponse.text());
+                }
+            } catch (e) {
+                console.warn('⚠️ Error during identifier auto-generation:', e.message);
+            }
+        }
+
+        // If still no identifier, throw error
+        if (!identifier) {
+            throw new Error('Patient identifier is required. Please either:\n1. Enter a patient identifier manually, or\n2. Configure IDGen auto-generation in OpenMRS (Admin > Manage Patient Identifier Sources)');
+        }
+
         const payload = {
             person: {
                 names: [{
@@ -88,7 +133,7 @@ class OpenMRSConnector extends BaseConnector {
                 birthdate: patientData.birthdate
             },
             identifiers: [{
-                identifier: patientData.identifier || `ID-${Date.now()}`,
+                identifier: identifier,
                 identifierType: identifierTypeUuid,
                 location: this.locationUUID
             }]
@@ -410,6 +455,35 @@ class OpenMRSConnector extends BaseConnector {
     }
 
     // Private helper methods
+
+    _addLuhnCheckDigit(identifier) {
+        // Luhn algorithm implementation
+        // Convert identifier to array of digits
+        const digits = identifier.toString().split('').map(Number);
+
+        // Double every second digit from right to left
+        let sum = 0;
+        let isSecond = false;
+
+        for (let i = digits.length - 1; i >= 0; i--) {
+            let digit = digits[i];
+
+            if (isSecond) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
+                }
+            }
+
+            sum += digit;
+            isSecond = !isSecond;
+        }
+
+        // Calculate check digit
+        const checkDigit = (10 - (sum % 10)) % 10;
+
+        return identifier + checkDigit.toString();
+    }
 
     _buildUrl(path) {
         if (this.useProxy) {
