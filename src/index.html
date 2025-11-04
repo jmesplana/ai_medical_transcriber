@@ -99,25 +99,6 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
         }
 
-        .speaker-tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .speaker-doctor {
-            background: rgba(26, 54, 93, 0.1);
-            color: var(--aidstack-navy);
-        }
-
-        .speaker-patient {
-            background: rgba(255, 107, 53, 0.1);
-            color: var(--aidstack-orange);
-        }
 
         .progress-steps {
             display: flex;
@@ -409,18 +390,6 @@
                     <p id="status" class="mt-4 text-lg font-display font-semibold" style="color: var(--slate-dark);"></p>
                     <p id="instructions" class="mt-2 text-sm" style="color: var(--slate-medium);"></p>
 
-                    <!-- Speaker Toggle -->
-                    <div class="mt-4 flex items-center justify-center gap-2">
-                        <span class="text-sm" style="color: var(--slate-medium);">Speaker:</span>
-                        <div class="inline-flex rounded-lg border-2" style="border-color: var(--slate-light);">
-                            <button id="speakerDoctor" class="px-4 py-2 text-sm font-display font-medium transition-all rounded-l-lg" style="background: var(--aidstack-navy); color: white;">
-                                <i class="fas fa-user-md mr-1"></i>Doctor
-                            </button>
-                            <button id="speakerPatient" class="px-4 py-2 text-sm font-display font-medium transition-all rounded-r-lg" style="background: white; color: var(--slate-dark);">
-                                <i class="fas fa-user mr-1"></i>Patient
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="mb-6">
@@ -578,26 +547,44 @@
         <!-- Step 4: Confirmation -->
         <div class="step" id="step4">
             <div class="card p-8 text-center">
-                <div class="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: rgba(255, 107, 53, 0.1);">
-                    <i class="fas fa-check-circle text-6xl" style="color: var(--aidstack-orange);"></i>
+                <div class="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: rgba(34, 197, 94, 0.1);">
+                    <i class="fas fa-check-circle text-6xl" style="color: #22c55e;"></i>
                 </div>
-                <h2 class="font-display font-bold text-3xl mb-4" style="color: var(--slate-dark);">Successfully Pushed to OpenMRS!</h2>
-                <p class="text-lg mb-6" style="color: var(--slate-medium);">Patient record and clinical note have been saved to the EHR system.</p>
+                <h2 class="font-display font-bold text-3xl mb-4" style="color: var(--slate-dark);">
+                    <span id="successConnectorName">Successfully Pushed to EHR!</span>
+                </h2>
+                <p class="text-lg mb-6" style="color: var(--slate-medium);">Clinical encounter has been saved to the EHR system.</p>
 
-                <!-- Push Summary -->
-                <div id="pushSummary" class="text-left max-w-2xl mx-auto mb-8 p-6 rounded-lg" style="background: var(--slate-bg); border: 1px solid var(--slate-light);">
-                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
-                        <i class="fas fa-clipboard-check mr-2" style="color: var(--aidstack-orange);"></i>
-                        Record Summary
+                <!-- What Was Pushed -->
+                <div id="pushSummary" class="text-left max-w-3xl mx-auto mb-8 p-6 rounded-lg" style="background: var(--slate-bg); border: 2px solid #22c55e;">
+                    <h3 class="font-display font-semibold text-xl mb-4" style="color: #22c55e;">
+                        <i class="fas fa-upload mr-2"></i>
+                        What Was Pushed
                     </h3>
-                    <div class="space-y-3 text-sm" style="color: var(--slate-medium);">
+                    <div class="space-y-4 text-sm" style="color: var(--slate-medium);">
                         <!-- Summary will be populated dynamically -->
                     </div>
                 </div>
 
-                <button id="startNewBtn" class="px-8 py-3 rounded-lg font-display font-semibold text-lg" style="background: var(--aidstack-navy); color: white;">
-                    <i class="fas fa-plus mr-2"></i>Start New Recording
-                </button>
+                <!-- Encounter Details -->
+                <div id="encounterDetails" class="text-left max-w-3xl mx-auto mb-8 p-6 rounded-lg" style="background: white; border: 1px solid var(--slate-light);">
+                    <h3 class="font-display font-semibold text-lg mb-4" style="color: var(--slate-dark);">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Encounter Details
+                    </h3>
+                    <div id="encounterDetailsContent" class="space-y-2 text-sm" style="color: var(--slate-medium);">
+                        <!-- Details will be populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex gap-4 justify-center">
+                    <button id="viewInEHRBtn" class="px-6 py-3 rounded-lg font-display font-medium text-base border-2" style="border-color: var(--aidstack-navy); color: var(--aidstack-navy); background: white;">
+                        <i class="fas fa-external-link-alt mr-2"></i>View in EHR
+                    </button>
+                    <button id="startNewBtn" class="px-6 py-3 rounded-lg font-display font-medium text-base" style="background: var(--aidstack-navy); color: white;">
+                        <i class="fas fa-plus mr-2"></i>Start New Recording
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -641,7 +628,6 @@
         let clinicalNotesConceptUUID = null;
         let diagnosisConceptUUID = null;
         let lastPushSummary = null;
-        let currentSpeaker = 'doctor'; // 'doctor' or 'patient'
         let autoSaveInterval = null;
         let isEditMode = false;
 
@@ -905,15 +891,6 @@
                 KeyboardShortcuts.showHelp();
             });
 
-            // Speaker toggle
-            document.getElementById('speakerDoctor').addEventListener('click', () => {
-                currentSpeaker = 'doctor';
-                updateSpeakerUI();
-            });
-            document.getElementById('speakerPatient').addEventListener('click', () => {
-                currentSpeaker = 'patient';
-                updateSpeakerUI();
-            });
 
             // Edit transcription
             document.getElementById('editTranscriptionBtn').addEventListener('click', toggleEditMode);
@@ -1023,23 +1000,6 @@
             }
         }
 
-        // Speaker Toggle Functions
-        function updateSpeakerUI() {
-            const doctorBtn = document.getElementById('speakerDoctor');
-            const patientBtn = document.getElementById('speakerPatient');
-
-            if (currentSpeaker === 'doctor') {
-                doctorBtn.style.background = 'var(--aidstack-navy)';
-                doctorBtn.style.color = 'white';
-                patientBtn.style.background = 'white';
-                patientBtn.style.color = 'var(--slate-dark)';
-            } else {
-                patientBtn.style.background = 'var(--aidstack-orange)';
-                patientBtn.style.color = 'white';
-                doctorBtn.style.background = 'white';
-                doctorBtn.style.color = 'var(--slate-dark)';
-            }
-        }
 
         // Edit Mode Functions
         function toggleEditMode() {
@@ -1434,12 +1394,7 @@
                 if (finalTranscript) {
                     finalTranscript = MedicalDictionary.correctText(finalTranscript);
 
-                    // Add speaker tag
-                    const speakerTag = currentSpeaker === 'doctor'
-                        ? '<span class="speaker-tag speaker-doctor">Doctor</span> '
-                        : '<span class="speaker-tag speaker-patient">Patient</span> ';
-
-                    fullTranscription += speakerTag + finalTranscript + ' ';
+                    fullTranscription += finalTranscript + ' ';
                 }
 
                 document.getElementById('transcription').innerHTML =
@@ -1846,61 +1801,134 @@ Transcription: ${fullTranscription}`
         function updatePushSummary() {
             if (!lastPushSummary) return;
 
-            const summaryDiv = document.querySelector('#pushSummary .space-y-3');
+            // Update connector name in title
+            document.getElementById('successConnectorName').textContent =
+                `Successfully Pushed to ${lastPushSummary.connectorName}!`;
 
-            let diagnosesHTML = '';
-            if (lastPushSummary.diagnoses.length > 0) {
-                diagnosesHTML = lastPushSummary.diagnoses.map((d, idx) => {
+            // Helper function to get confidence color
+            function getConfidenceColor(confidence) {
+                const percent = Math.round((confidence || 0.8) * 100);
+                if (percent >= 80) return '#22c55e'; // green
+                if (percent >= 60) return '#f59e0b'; // amber
+                return '#ef4444'; // red
+            }
+
+            // Populate "What Was Pushed" section
+            const summaryDiv = document.querySelector('#pushSummary .space-y-4');
+
+            let itemsHTML = '';
+
+            // Clinical Notes
+            if (lastPushSummary.hasNotes) {
+                itemsHTML += `
+                    <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--slate-light);">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <i class="fas fa-check-circle" style="color: #22c55e; margin-right: 8px;"></i>
+                            <strong style="color: var(--slate-dark); font-size: 15px;">Clinical Notes</strong>
+                            <span style="margin-left: auto; color: var(--slate-medium); font-size: 13px;">${lastPushSummary.notesLength} characters</span>
+                        </div>
+                        <div style="background: #F8FAFC; padding: 12px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--slate-medium); white-space: pre-wrap; word-wrap: break-word; overflow-x: hidden;">
+                            ${lastPushSummary.notesPreview || 'No preview available'}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Diagnoses
+            if (lastPushSummary.diagnosesCount > 0) {
+                const diagnosesListHTML = lastPushSummary.diagnoses.map((d, idx) => {
                     const confidencePercent = Math.round((d.confidence || 0.8) * 100);
-                    return `<div class="pl-4 mb-2" style="background: #F8FAFC; padding: 8px; border-radius: 6px; border-left: 3px solid var(--aidstack-orange);">
-                        <div style="font-weight: 600; color: var(--slate-dark);">${idx + 1}. ${d.name}</div>
-                        ${d.icd10 ? `<div style="font-size: 12px; color: var(--slate-medium); margin-top: 4px;">ICD-10: <code style="background: white; padding: 2px 6px; border-radius: 3px;">${d.icd10}</code></div>` : ''}
-                        <div style="font-size: 12px; color: var(--slate-medium); margin-top: 4px;">Confidence: ${confidencePercent}%</div>
-                    </div>`;
+                    const confidenceColor = getConfidenceColor(d.confidence);
+                    return `
+                        <div style="display: flex; align-items: start; padding: 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--slate-dark); margin-bottom: 4px;">${idx + 1}. ${d.name}</div>
+                                ${d.icd10 ? `<div style="font-size: 12px; color: var(--slate-medium);">
+                                    ICD-10: <code style="background: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">${d.icd10}</code>
+                                </div>` : ''}
+                            </div>
+                            <div style="margin-left: 12px; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; background: ${confidenceColor}15; color: ${confidenceColor};">
+                                ${confidencePercent}%
+                            </div>
+                        </div>
+                    `;
                 }).join('');
-            } else {
-                diagnosesHTML = '<div class="pl-4" style="color: var(--slate-light);">No diagnoses recorded</div>';
+
+                itemsHTML += `
+                    <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--slate-light);">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <i class="fas fa-check-circle" style="color: #22c55e; margin-right: 8px;"></i>
+                            <strong style="color: var(--slate-dark); font-size: 15px;">Diagnoses</strong>
+                            <span style="margin-left: auto; background: var(--aidstack-navy); color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${lastPushSummary.diagnosesCount}</span>
+                        </div>
+                        ${diagnosesListHTML}
+                    </div>
+                `;
             }
 
-            let symptomsHTML = '';
-            if (lastPushSummary.symptoms && lastPushSummary.symptoms.length > 0) {
-                symptomsHTML = lastPushSummary.symptoms.map(s =>
-                    `<div class="pl-4">• ${s}</div>`
+            // Symptoms
+            if (lastPushSummary.symptomsCount > 0) {
+                const symptomsListHTML = lastPushSummary.symptoms.map(s =>
+                    `<div style="padding: 6px 12px; background: #F8FAFC; border-radius: 6px; display: inline-block; margin: 4px; font-size: 13px; color: var(--slate-dark);">
+                        <i class="fas fa-circle" style="font-size: 6px; margin-right: 6px; color: var(--aidstack-orange);"></i>${s}
+                    </div>`
                 ).join('');
-            } else {
-                symptomsHTML = '<div class="pl-4" style="color: var(--slate-light);">No symptoms recorded</div>';
+
+                itemsHTML += `
+                    <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--slate-light);">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <i class="fas fa-check-circle" style="color: #22c55e; margin-right: 8px;"></i>
+                            <strong style="color: var(--slate-dark); font-size: 15px;">Symptoms</strong>
+                            <span style="margin-left: auto; background: var(--aidstack-navy); color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${lastPushSummary.symptomsCount}</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            ${symptomsListHTML}
+                        </div>
+                    </div>
+                `;
             }
 
-            summaryDiv.innerHTML = `
-                <div>
-                    <strong style="color: var(--slate-dark);">Patient:</strong> ${lastPushSummary.patient}
+            if (itemsHTML === '') {
+                itemsHTML = '<div style="color: var(--slate-medium); text-align: center; padding: 20px;">No clinical data was pushed.</div>';
+            }
+
+            summaryDiv.innerHTML = itemsHTML;
+
+            // Populate "Encounter Details" section
+            const encounterDetailsDiv = document.getElementById('encounterDetailsContent');
+            encounterDetailsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-medium); margin-bottom: 4px;">Patient</div>
+                        <div style="font-weight: 600; color: var(--slate-dark);">${lastPushSummary.patient}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-medium); margin-bottom: 4px;">Timestamp</div>
+                        <div style="font-weight: 600; color: var(--slate-dark);">${lastPushSummary.timestamp}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-medium); margin-bottom: 4px;">Encounter Type</div>
+                        <div style="font-weight: 600; color: var(--aidstack-orange);">${lastPushSummary.encounterType}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-medium); margin-bottom: 4px;">Location</div>
+                        <div style="font-weight: 600; color: var(--slate-dark);">${lastPushSummary.location}</div>
+                    </div>
                 </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Visit Type:</strong> ${lastPushSummary.visitType}
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Encounter Type:</strong>
-                    <span style="color: var(--aidstack-orange); font-weight: 600;">${lastPushSummary.encounterType}</span>
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Location:</strong> ${lastPushSummary.location}
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Timestamp:</strong> ${lastPushSummary.timestamp}
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Clinical Notes:</strong>
-                    ${lastPushSummary.hasNotes ? `<span style="color: green;">✓ Recorded (${lastPushSummary.notesLength} characters)</span>` : '<span style="color: var(--slate-light);">None</span>'}
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Symptoms (${lastPushSummary.symptomsCount || 0}):</strong>
-                    ${symptomsHTML}
-                </div>
-                <div>
-                    <strong style="color: var(--slate-dark);">Diagnoses (${lastPushSummary.diagnosesCount}):</strong>
-                    ${diagnosesHTML}
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--slate-light);">
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-medium); margin-bottom: 4px;">Encounter UUID</div>
+                    <div style="font-family: 'Courier New', monospace; font-size: 13px; color: var(--slate-dark); background: #F8FAFC; padding: 8px; border-radius: 4px; word-break: break-all;">
+                        ${lastPushSummary.encounterUuid}
+                    </div>
                 </div>
             `;
+
+            // Set up "View in EHR" button
+            const viewInEHRBtn = document.getElementById('viewInEHRBtn');
+            viewInEHRBtn.onclick = () => {
+                const ehrUrl = `${lastPushSummary.ehrUrl}/spa/patient/${lastPushSummary.patientUuid}/chart/Visits`;
+                window.open(ehrUrl, '_blank');
+            };
         }
 
         async function pushToOpenMRS() {
@@ -2033,8 +2061,10 @@ Transcription: ${fullTranscription}`
                     if (fullTranscription) {
                         console.log('📝 Building comprehensive clinical notes...');
 
-                        // Strip HTML tags from transcription
-                        const cleanTranscription = fullTranscription.replace(/<[^>]*>/g, '').trim();
+                        // Strip HTML tags and decode HTML entities from transcription
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = fullTranscription;
+                        const cleanTranscription = tempDiv.textContent || tempDiv.innerText || '';
 
                         comprehensiveNote = '';
                         comprehensiveNote += '================================================================================\n';
@@ -2042,13 +2072,13 @@ Transcription: ${fullTranscription}`
                         comprehensiveNote += '================================================================================\n\n';
 
                         // 1. Chief Complaint / Transcription
-                        comprehensiveNote += '>>> CLINICAL NOTE\n';
+                        comprehensiveNote += '+++ CLINICAL NOTE\n';
                         comprehensiveNote += '________________________________________________________________________________\n';
                         comprehensiveNote += cleanTranscription + '\n\n';
 
                         // 2. Primary Diagnoses
                         if (diagnoses.length > 0) {
-                            comprehensiveNote += '>>> DIAGNOSES\n';
+                            comprehensiveNote += '+++ DIAGNOSES\n';
                             comprehensiveNote += '________________________________________________________________________________\n';
                             diagnoses.forEach((dx, idx) => {
                                 const confidencePercent = Math.round(dx.confidence * 100);
@@ -2069,7 +2099,7 @@ Transcription: ${fullTranscription}`
 
                         // 3. Symptoms
                         if (symptoms.length > 0) {
-                            comprehensiveNote += '>>> PRESENTING SYMPTOMS\n';
+                            comprehensiveNote += '+++ PRESENTING SYMPTOMS\n';
                             comprehensiveNote += '________________________________________________________________________________\n\n';
                             comprehensiveNote += symptoms.map((s, i) => `  ${i + 1}. ${s}`).join('\n');
                             comprehensiveNote += '\n\n';
@@ -2077,7 +2107,7 @@ Transcription: ${fullTranscription}`
 
                         // 4. Differential Diagnoses
                         if (differentialDx.length > 0) {
-                            comprehensiveNote += '>>> DIFFERENTIAL DIAGNOSES\n';
+                            comprehensiveNote += '+++ DIFFERENTIAL DIAGNOSES\n';
                             comprehensiveNote += '________________________________________________________________________________\n';
                             differentialDx.forEach((ddx, idx) => {
                                 // Support both 'diagnosis' and 'condition' field names
@@ -2099,7 +2129,7 @@ Transcription: ${fullTranscription}`
 
                         // 5. Clinical Decision Support
                         if (clinicalDecisionSupport.length > 0) {
-                            comprehensiveNote += '>>> CLINICAL RECOMMENDATIONS\n';
+                            comprehensiveNote += '+++ CLINICAL RECOMMENDATIONS\n';
                             comprehensiveNote += '________________________________________________________________________________\n';
                             clinicalDecisionSupport.forEach((cds, idx) => {
                                 // Support both old format (recommendation/rationale/urgency) and new format (message/priority)
@@ -2121,7 +2151,7 @@ Transcription: ${fullTranscription}`
 
                         // 6. Medications (if any)
                         if (medications.length > 0) {
-                            comprehensiveNote += '>>> MEDICATIONS\n';
+                            comprehensiveNote += '+++ MEDICATIONS\n';
                             comprehensiveNote += '________________________________________________________________________________\n\n';
                             comprehensiveNote += medications.map((m, i) => `  ${i + 1}. ${m}`).join('\n');
                             comprehensiveNote += '\n\n';
@@ -2129,7 +2159,7 @@ Transcription: ${fullTranscription}`
 
                         // 7. Procedures (if any)
                         if (procedures.length > 0) {
-                            comprehensiveNote += '>>> PROCEDURES\n';
+                            comprehensiveNote += '+++ PROCEDURES\n';
                             comprehensiveNote += '________________________________________________________________________________\n\n';
                             comprehensiveNote += procedures.map((p, i) => `  ${i + 1}. ${p}`).join('\n');
                             comprehensiveNote += '\n\n';
@@ -2138,7 +2168,7 @@ Transcription: ${fullTranscription}`
                         // 8. Documentation Quality Score
                         if (qualityScore) {
                             const scorePercent = Math.round(qualityScore.completeness * 100);
-                            comprehensiveNote += '>>> DOCUMENTATION QUALITY\n';
+                            comprehensiveNote += '+++ DOCUMENTATION QUALITY\n';
                             comprehensiveNote += '________________________________________________________________________________\n\n';
                             comprehensiveNote += `  Completeness: ${scorePercent}%\n`;
                             if (qualityScore.missingElements && qualityScore.missingElements.length > 0) {
@@ -2152,8 +2182,15 @@ Transcription: ${fullTranscription}`
                         comprehensiveNote += `Date: ${new Date().toLocaleString()}\n`;
                         comprehensiveNote += '================================================================================\n';
 
-                        console.log('Comprehensive note length:', comprehensiveNote.length);
-                        await currentConnector.addClinicalNotes(encounter.uuid, comprehensiveNote, patientUuid);
+                        // Final decode step to ensure no HTML entities are sent to EHR
+                        // Use DOMParser for more robust HTML entity decoding
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(comprehensiveNote, 'text/html');
+                        const decodedNote = doc.body.textContent || comprehensiveNote;
+
+                        console.log('Comprehensive note length:', decodedNote.length);
+                        console.log('Sample of note (first 200 chars):', decodedNote.substring(0, 200));
+                        await currentConnector.addClinicalNotes(encounter.uuid, decodedNote, patientUuid);
                         console.log('✅ Comprehensive clinical notes added');
                     } else {
                         console.log('⚠️ No transcription to add');
@@ -2198,6 +2235,7 @@ Transcription: ${fullTranscription}`
 
                 lastPushSummary = {
                     patient: patientName,
+                    patientUuid: patientUuid,
                     visitType: metadata.visitType,
                     encounterType: metadata.encounterType,
                     location: metadata.location,
@@ -2211,7 +2249,11 @@ Transcription: ${fullTranscription}`
                     symptomsCount: symptoms.length,
                     symptoms: symptoms,
                     hasNotes: !!fullTranscription,
-                    notesLength: fullTranscription ? comprehensiveNote.length : 0
+                    notesLength: fullTranscription ? comprehensiveNote.length : 0,
+                    notesPreview: comprehensiveNote ? comprehensiveNote.substring(0, 1500) + (comprehensiveNote.length > 1500 ? '...' : '') : '',
+                    encounterUuid: encounter.uuid,
+                    connectorName: currentConnector.name,
+                    ehrUrl: currentConnector.config.baseUrl
                 };
 
                 updatePushSummary();
